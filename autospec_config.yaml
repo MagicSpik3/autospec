@@ -1,0 +1,72 @@
+# wealthdv settings for one survey round.
+#
+# Edit the values after the colons. Keep text in single quotes and use forward
+# slashes (/) in paths. Wherever you write {round}, the round number is filled in.
+
+# The survey round, as a number
+round: 9
+
+# Folder holding the DV specification workbooks, and the pattern their file names follow
+spec_folder: 'specs'
+# spec_pattern: '_DV_Spec_R{round}.*[.]xlsx$'
+
+spec_pattern: 'TEST.*[.]xlsx$'
+
+
+# Sheets in the spec workbooks that hold no derivations, matched exactly (spaces count)
+exclude_sheets:
+  - 'Major Changes'
+  - 'Imputation_list'
+  - 'Imputation Change_log'
+  - 'DV Change Log'
+  - 'LA Change_log'
+  - 'Change_log'
+  - 'Round {round} Imp Spec'
+  - 'R{round}_finalised_changelog'
+  - ' Final accounting structure'
+  - 'R{round}_Total_Household_Income'
+  - 'DVPinPTyp38'
+  - 'DVPinPTyp18'
+
+# The imputed person-level SPSS file the DVs are added to
+
+data_file: 'new_r9.sav'
+
+
+
+# How new DVs are spelt. Variable names are matched ignoring case, and inputs and DVs
+# already in the data always keep the data's spelling. 'auto' names new DVs in the
+# data's style: lower case, upper case, or as the spec spells them if the data mixes
+# cases. Or choose 'lower', 'upper' or 'spec'.
+name_case: 'lower'
+
+# Where the plan, QA reports and trial runs are saved; created if missing
+output_folder: 'outputs/R{round}'
+
+# Where this round's DV suite code lives
+suite_folder: 'dv_suite/R{round}'
+
+# Where the data with DVs added is saved as an SPSS file; leave blank to not save
+output_data_file: 'test_data'
+
+# Where the DVs are exported as plain R scripts for the team that applies them,
+# usually a checkout of the scripts repo. Leave blank for dv_scripts inside the output folder.
+#scripts_folder: 'D:/git/was-dvs'
+scripts_folder: 'D:/git/test-dvs'
+
+
+# Topics to work on: trial runs, writing the suite and running it. Leave as [] for every
+# topic. A topic is a spec workbook's name before _DV_Spec, in lower case, such as
+# 'property_wealth'. show_topics() lists them. For example:
+# topics:
+#   - 'property_wealth'
+#   - 'physical_wealth'
+topics: []
+
+# When a DV is defined on more than one sheet, build it from the row on the sheet highest
+# in this list and mark the others duplicate, whatever their text. Leave as [] to decide
+# each one in the plan. QA_duplicate_dvs.csv lists the DVs still to decide. For example:
+# sheet_priority:
+#   - 'R9_Pension_Income'
+#   - 'R9_Other_Invest_Pension_Ben '
+sheet_priority: []
