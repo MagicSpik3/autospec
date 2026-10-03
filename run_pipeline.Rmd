@@ -1,91 +1,176 @@
 ---
-title: "Run Pipeline: Before Review"
+title: "Run Pipeline"
 author: "Mark London"
 date: "2026-09-08"
 output: html_document
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 library(autospec)
 library(data.table)
-read_pipeline_data <- function(path, n_max = NULL) {
-	extension <- tolower(tools::file_ext(path))
-
-	if (extension == "csv") {
-		return(utils::read.csv(
-			path,
-			nrows = if (is.null(n_max)) -1L else n_max,
-			check.names = FALSE
-		))
-	}
-
-	if (extension == "sav") {
-		if (is.null(n_max)) return(haven::read_sav(path))
-		return(haven::read_sav(path, n_max = n_max))
-	}
-
-	stop("data_file must be a .csv or .sav file.", call. = FALSE)
-}
 ```
+
 Run the chunks from top to bottom. Every chunk is safe to run again: nothing
 you edit by hand (sign-offs in the plan, code in the suite) is overwritten.
 When unsure what to do next, run the `status` chunk. The same steps are in
-RStudio's Addins menu under autospec.
-Settings
+RStudio's **Addins** menu under *autospec*.
+
+## Settings
+
 Every file path and the round number live in `autospec_config.yaml`. For a new
 round, change `round` and `data_file` there. To work on some topics only, list
 them under `topics`; `show_topics(config)` lists them.
+
 ```{r config}
 config <- read_autospec_config("autospec_config.yaml")
-# The data's column names, read without loading its rows
-data_names <- names(read_pipeline_data(config$data_file, n_max = 0))
+
+# The data's column names, read without loading the data
+data_names <- names(haven::read_sav(config$data_file, n_max = 0))
 ```
-Where am I?
+
+## Where am I?
+
 Shows, per topic, how many rows are signed off and still to sign off, any DVs
 defined twice that need a decision, how much of the suite is written, and
 the chunk to run next.
+
 ```{r status}
 autospec_status(config, data_names)
 ```
-1. Update the plan
+
+## 1. Update the plan
+
 Reads the specs, saves the catalogue, and writes `dv_plan.csv`. Run it the first
 time, and again whenever the specs change: sign-offs whose spec text has not
 changed are kept, the old plan is backed up, and what changed is listed.
+
 DVs defined on more than one sheet with different text are listed in
 `QA_duplicate_dvs.csv`. Settle a whole sheet at once by listing the preferred
 sheet under `sheet_priority` in the config and running this chunk again.
+
 ```{r plan, eval=FALSE}
 update_dv_plan(config, data_names)
 ```
-1a. Required inputs audit
+
+## 1a. Required inputs audit
+
 Writes `inputs.csv` in the output folder, listing every distinct input variable
 used by the current plan and whether it was found in the loaded data. When
 `name_case` is set to `"lower"`, the variable names are lower-cased before the
 check and before writing to CSV.
+
 ```{r inputs, eval=FALSE}
 plan <- read_dv_plan(config$plan_file)
 input_table <- make_required_input_table(plan, data_names = data_names)
+
 if (identical(config$name_case, "lower")) {
-input_table$variable <- tolower(input_table$variable)
-input_table$found_in_data <- tolower(input_table$variable) %in% tolower(data_names)
+  input_table$variable <- tolower(input_table$variable)
+  input_table$found_in_data <- tolower(input_table$variable) %in% tolower(data_names)
 }
+
 input_table <- input_table[, c("variable", "found_in_data")]
 data.table::fwrite(input_table, file.path(config$output_folder, "inputs.csv"))
 cli::cli_alert_success("Input audit saved to {.file {file.path(config$output_folder, 'inputs.csv')}}.")
 ```
-2. Trial run (optional, any time)
+
+## 2. Trial run (optional, any time)
+
 Tries every drafted DV on the data, with nothing signed off. It uses a
 throwaway folder, so the plan and the suite are not touched. Change `topics`
 to try a few topics; steps in other topics that build their inputs run too.
+
 ```{r trial, eval=FALSE}
-was_data <- read_pipeline_data(config$data_file)
+was_data <- haven::read_sav(config$data_file)
+
 trial <- trial_run(was_data, config, topics = config$topics)
 ```
-3. Review the plan
+
+## 3. Review the plan
+
 Open `dv_plan.csv` in Excel. For each row, compare `verb`, `args` and
 `condition` with `instructions` and read `notes`. When it is right, set `status`
 to `reviewed` and fill in `reviewed_by` and `reviewed_on`. Rows marked
 `duplicate` or `not_a_derivation` need nothing. Only mark rows reviewed that
 have been checked: to see output first, use the trial run.
-Stop here for plan review. Save the reviewed `dv_plan.csv`, then continue with
-[`run_pipeline_after_review.Rmd`](run_pipeline_after_review.Rmd).
+
+## 4. Sync the suite with the plan
+
+Writes the suite the first time, and after each batch of sign-offs fills in the
+steps that were waiting for them. Steps with code in them, written by hand or
+by an earlier sync, are never touched; changed files are backed up in the
+suite's `_backup` folder.
+
+```{r sync, eval=FALSE}
+sync_dv_suite(
+  read_dv_plan(config$plan_file),
+  config$suite_folder,
+  data_names = data_names,
+  name_case = config$name_case,
+  topics = config$topics
+)
+```
+
+Steps still at `derive = NULL` after a sync have no verb that fits: write them
+by hand, copying variable names from the step's `inputs`. To try one:
+
+```{r step, eval=FALSE}
+run_dv_step(was_data, read_dv_suite(config$suite_folder), "dv_name")
+```
+
+## 5. Check and test
+
+Run after every edit. `check_dv_suite()` reads the code without touching the
+data; `test_dv_suite()` runs the example tests in the suite's `tests` folder.
+
+```{r check, eval=FALSE}
+check_dv_suite(config$suite_folder, data_names = data_names)
+test_dv_suite(config$suite_folder)
+```
+
+## 6. Build the DVs
+
+Set the pension discount rate in the suite's `settings.R` first. Steps that
+fail, are not written yet or are missing an input are reported and skipped.
+
+```{r build, eval=FALSE}
+was_data <- haven::read_sav(config$data_file)
+
+was_data <- run_dv_suite(
+  was_data,
+  config$suite_folder,
+  topics = config$topics,
+  report_file = config$report_file
+)
+```
+
+## 7. Save the data with DVs
+
+Saved to `output_data_file` in the config, if it is set.
+
+```{r save, eval=FALSE}
+if (nzchar(config$output_data_file)) {
+  haven::write_sav(was_data, config$output_data_file)
+  cli::cli_alert_success("Data with DVs saved to {config$output_data_file}.")
+} else {
+  cli::cli_alert_info("output_data_file is blank in the config, so the data was not saved.")
+}
+```
+
+## 8. Export the DVs as plain R for the team that applies them
+
+Writes plain R scripts, with no autospec in them, to `scripts_folder` in the
+config (a checkout of the scripts repo); commit and push from there. The suite
+is checked and tested, and the plain R compared DV by DV with the suite on
+`was_data`, before anything is written. Export from the whole suite, not a
+topic selection.
+
+```{r export, eval=FALSE}
+export_dv_scripts(
+  config$suite_folder,
+  config$scripts_folder,
+  was_data,
+  title = paste("Spec ", config$round)
+)
+```
