@@ -9,7 +9,7 @@ dv_discount_to_present_value,Discounts a future amount back to present value at 
 dv_flag_any_of,Flags whether any given values match a set of accepted values.,flag any of
 dv_flag_if,Flags whether a condition is true for each row.,if
 dv_flag_positive,Flags whether a numeric value is above a threshold.,positive
-dv_keep_if,Copies a value where a condition is true, else a default value.,keep if
+dv_keep_if,"Copies a value where a condition is true, else a default value.",keep if
 dv_ratio,Divides one numeric value by another and handles zeros safely.,ratio
-dv_row_total,Adds a set of numeric values together, with a choice over missing handling.,row total
+dv_row_total,"Adds a set of numeric values together, with a choice over missing handling.",row total
 dv_sum_to_household,Totals a numeric value across households.,sum to household

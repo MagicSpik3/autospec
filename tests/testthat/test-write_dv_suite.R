@@ -3,7 +3,8 @@ plan_row <- function(dv, verb = NA_character_, args = NA_character_,
                      inputs = NA_character_, label = NA_character_,
                      instructions = "spec text") {
   data.frame(
-    dv = dv, level = "person", verb = verb, inputs = inputs, args = args,
+    uid = NA_character_, dv = dv, level = "person", verb = verb,
+    inputs = inputs, args = args,
     condition = condition, status = status, reviewed_by = "JD",
     reviewed_on = NA_character_, notes = NA_character_,
     file_name = "Test_DV_Spec_R9.xlsx", sheet_name = "Sheet1", excel_row = 2L,

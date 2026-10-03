@@ -32,7 +32,8 @@ fake_plan_row <- function(dv, verb = NA_character_, args = NA_character_,
                           file_name = "Test_DV_Spec_R9.xlsx", sheet_name = "Sheet1",
                           instructions = "spec text", notes = NA_character_) {
   data.frame(
-    dv = dv, level = "person", verb = verb, inputs = NA_character_, args = args,
+    uid = NA_character_, dv = dv, level = "person", verb = verb,
+    inputs = NA_character_, args = args,
     condition = condition, status = status, reviewed_by = reviewed_by,
     reviewed_on = NA_character_, notes = notes,
     file_name = file_name, sheet_name = sheet_name, excel_row = 2L,
