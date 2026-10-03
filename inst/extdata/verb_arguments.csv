@@ -1,0 +1,47 @@
+verb,argument,what_to_give,where_it_is_set,settings_name,must_be_given,if_not_given,what_it_is_for
+dv_annualise,amount_col,one column name,plan args,,yes,,Sets amount_col for the dv_annualise calculation.
+dv_annualise,period_col,one column name,plan args,,yes,,Sets period_col for the dv_annualise calculation.
+dv_annualise,target,annual or monthly,plan args,,no,annual,Sets target for the dv_annualise calculation.
+dv_annualise,period_codes,text,plan args,,no,,Sets period_codes for the dv_annualise calculation.
+dv_annualise,multipliers,text,plan args,,no,,Sets multipliers for the dv_annualise calculation.
+dv_annualise,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,keep,Sets sentinels for the dv_annualise calculation.
+dv_any_to_household,flag_col,one column name,plan args,,yes,,Sets flag_col for the dv_any_to_household calculation.
+dv_any_to_household,by,one column name,settings.R,by,no,hhserial,Sets by for the dv_any_to_household calculation.
+dv_band_midpoint,band_col,one column name,plan args,,yes,,Sets band_col for the dv_band_midpoint calculation.
+dv_band_midpoint,table,text,plan args,,yes,,Sets table for the dv_band_midpoint calculation.
+dv_band_midpoint,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,keep,Sets sentinels for the dv_band_midpoint calculation.
+dv_clear_sentinels,value_col,one column name,plan args,,yes,,Sets value_col for the dv_clear_sentinels calculation.
+dv_clear_sentinels,codes,one or more numbers,settings.R,codes,no,"-8, -9",Sets codes for the dv_clear_sentinels calculation.
+dv_clear_sentinels,replacement,a number,settings.R,replacement,no,0,Sets replacement for the dv_clear_sentinels calculation.
+dv_copy,source_col,one column name,plan args,,yes,,Sets source_col for the dv_copy calculation.
+dv_copy,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,keep,Sets sentinels for the dv_copy calculation.
+dv_difference,minuend_col,one column name,plan args,,yes,,Sets minuend_col for the dv_difference calculation.
+dv_difference,subtrahend_col,one column name,plan args,,yes,,Sets subtrahend_col for the dv_difference calculation.
+dv_difference,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,stop,Sets sentinels for the dv_difference calculation.
+dv_discount_to_present_value,amount_col,one column name,plan args,,yes,,Sets amount_col for the dv_discount_to_present_value calculation.
+dv_discount_to_present_value,age_col,one column name,plan args,,yes,,Sets age_col for the dv_discount_to_present_value calculation.
+dv_discount_to_present_value,rate,a number or NA,settings.R,rate,yes,,Sets rate for the dv_discount_to_present_value calculation.
+dv_discount_to_present_value,target_age,a number,settings.R,target_age,no,66,Sets target_age for the dv_discount_to_present_value calculation.
+dv_discount_to_present_value,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,stop,Sets sentinels for the dv_discount_to_present_value calculation.
+dv_flag_any_of,value_cols,several column names,plan args,,yes,,Sets value_cols for the dv_flag_any_of calculation.
+dv_flag_any_of,match_values,one or more numbers,plan args,,yes,,Sets match_values for the dv_flag_any_of calculation.
+dv_flag_if,condition,a condition,plan condition,,yes,,Sets condition for the dv_flag_if calculation.
+dv_flag_if,otherwise,a number or NA,plan args,,no,0,Sets otherwise for the dv_flag_if calculation.
+dv_flag_positive,value_col,one column name,plan args,,yes,,Sets value_col for the dv_flag_positive calculation.
+dv_flag_positive,threshold,a number,plan args,,no,0,Sets threshold for the dv_flag_positive calculation.
+dv_flag_positive,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,stop,Sets sentinels for the dv_flag_positive calculation.
+dv_keep_if,condition,a condition,plan condition,,yes,,Sets condition for the dv_keep_if calculation.
+dv_keep_if,value_col,one column name,plan args,,yes,,Sets value_col for the dv_keep_if calculation.
+dv_keep_if,otherwise,a number or NA,plan args,,no,0,Sets otherwise for the dv_keep_if calculation.
+dv_keep_if,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,stop,Sets sentinels for the dv_keep_if calculation.
+dv_ratio,numerator_col,one column name,plan args,,yes,,Sets numerator_col for the dv_ratio calculation.
+dv_ratio,denominator_col,one column name,plan args,,yes,,Sets denominator_col for the dv_ratio calculation.
+dv_ratio,otherwise,a number or NA,plan args,,no,0,Sets otherwise for the dv_ratio calculation.
+dv_ratio,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,stop,Sets sentinels for the dv_ratio calculation.
+dv_row_total,value_cols,several column names,plan args,,yes,,Sets value_cols for the dv_row_total calculation.
+dv_row_total,na_as_zero,TRUE or FALSE,settings.R,na_as_zero,no,TRUE,Sets na_as_zero for the dv_row_total calculation.
+dv_row_total,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,stop,Sets sentinels for the dv_row_total calculation.
+dv_sum_to_household,value_col,one column name,plan args,,yes,,Sets value_col for the dv_sum_to_household calculation.
+dv_sum_to_household,by,one column name,settings.R,by,no,hhserial,Sets by for the dv_sum_to_household calculation.
+dv_sum_to_household,na_as_zero,TRUE or FALSE,settings.R,na_as_zero,no,TRUE,Sets na_as_zero for the dv_sum_to_household calculation.
+dv_sum_to_household,sentinels,"keep, stop, missing or zero",settings.R,sentinels,no,stop,Sets sentinels for the dv_sum_to_household calculation.

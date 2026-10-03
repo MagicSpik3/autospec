@@ -10,7 +10,7 @@
 #' Corrections to `verb`, `args` or `condition` are kept only on rows signed
 #' off; the backup holds any others.
 #'
-#' @param config The config from [read_wealthdv_config()].
+#' @param config The config from [read_autospec_config()].
 #' @param data_names Optional column names of the input data. When given, every
 #'   input matching neither a DV nor a data column is noted in the plan.
 #'
@@ -19,7 +19,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' config <- read_wealthdv_config()
+#' config <- read_autospec_config()
 #' update_dv_plan(config)
 #' }
 update_dv_plan <- function(config, data_names = NULL) {

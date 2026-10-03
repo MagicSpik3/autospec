@@ -1,34 +1,34 @@
 #' RStudio add-ins
 #'
-#' The wealthdv entries in RStudio's **Addins** menu. Each reads
-#' `wealthdv_config.yaml` in the working folder and runs one step:
-#' [wealthdv_status()], [update_dv_plan()], [trial_run()] (asking which topics)
+#' The autospec entries in RStudio's **Addins** menu. Each reads
+#' `autospec_config.yaml` in the working folder and runs one step:
+#' [autospec_status()], [update_dv_plan()], [trial_run()] (asking which topics)
 #' or [sync_dv_suite()]. They use `was_data` when it is loaded; otherwise the
 #' trial loads the data file into `was_data`, and the others read only its
 #' column names. The trial's result is saved as `trial_data`.
 #'
 #' @return Whatever the step returns, invisibly.
-#' @name wealthdv_addins
+#' @name autospec_addins
 #' @keywords internal
 NULL
 
 
-#' @rdname wealthdv_addins
+#' @rdname autospec_addins
 #' @export
 addin_status <- function() {
   config <- addin_config()
-  wealthdv_status(config, data_names = addin_data_names(config))
+  autospec_status(config, data_names = addin_data_names(config))
 }
 
 
-#' @rdname wealthdv_addins
+#' @rdname autospec_addins
 #' @export
 addin_update_plan <- function() {
   update_dv_plan(addin_config())
 }
 
 
-#' @rdname wealthdv_addins
+#' @rdname autospec_addins
 #' @export
 addin_trial_run <- function() {
   config <- addin_config()
@@ -49,7 +49,7 @@ addin_trial_run <- function() {
 }
 
 
-#' @rdname wealthdv_addins
+#' @rdname autospec_addins
 #' @export
 addin_sync_suite <- function() {
   config <- addin_config()
@@ -66,13 +66,13 @@ addin_sync_suite <- function() {
 
 #' @keywords internal
 #' @noRd
-addin_config <- function(path = "wealthdv_config.yaml") {
+addin_config <- function(path = "autospec_config.yaml") {
   if (!file.exists(path)) {
-    cli::cli_alert_danger("No {.file {path}} in {.file {getwd()}}. Open wealthdv.Rproj so R works in the wealthdv folder.")
+    cli::cli_alert_danger("No {.file {path}} in {.file {getwd()}}. Open autospec.Rproj so R works in the autospec folder.")
     stop("Cannot find the config file.", call. = FALSE)
   }
 
-  read_wealthdv_config(path)
+  read_autospec_config(path)
 }
 
 
@@ -116,7 +116,7 @@ addin_data_names <- function(config) {
 #' @noRd
 check_data_file <- function(config) {
   if (!requireNamespace("haven", quietly = TRUE)) {
-    cli::cli_alert_danger("The haven package is needed to read the data. Run setup_wealthdv.R to install it.")
+    cli::cli_alert_danger("The haven package is needed to read the data. Run setup_autospec.R to install it.")
     stop("haven is not installed.", call. = FALSE)
   }
 

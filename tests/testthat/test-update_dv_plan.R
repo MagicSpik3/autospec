@@ -103,6 +103,6 @@ test_that("a DV signed off on two rows with the same code is not waiting", {
 })
 
 
-test_that("the config must come from read_wealthdv_config()", {
-  expect_error(suppressMessages(update_dv_plan(list())), "not a wealthdv config")
+test_that("the config must come from read_autospec_config()", {
+  expect_error(suppressMessages(update_dv_plan(list())), "not a autospec config")
 })

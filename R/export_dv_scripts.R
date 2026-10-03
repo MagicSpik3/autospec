@@ -1,7 +1,7 @@
 #' Export the DVs as plain R scripts for the team that applies them
 #'
 #' The last step on our side. Writes the finished DVs into a folder (usually a
-#' checkout of the scripts repo) as plain R that needs no wealthdv:
+#' checkout of the scripts repo) as plain R that needs no autospec:
 #'
 #' * `dvs/<topic>.R` - one file per topic, one self-contained block per DV.
 #'   Each block shows the same steps in SPSS syntax as comments, for readers
@@ -47,7 +47,7 @@ export_dv_scripts <- function(suite_dir = "dv_suite", scripts_dir, data, title =
   }
 
   if (!requireNamespace("openxlsx", quietly = TRUE)) {
-    cli::cli_alert_danger("The openxlsx package is needed to write the config. Run setup_wealthdv.R to install it.")
+    cli::cli_alert_danger("The openxlsx package is needed to write the config. Run setup_autospec.R to install it.")
     stop("openxlsx is not installed.", call. = FALSE)
   }
 

@@ -825,7 +825,7 @@ topic_header_lines <- function(topic, topic_rows, suite_dir) {
 
   c(
     paste0("# ", topic, " DVs"),
-    paste0("# Written by wealthdv::write_dv_suite() on ", format(Sys.Date()), "."),
+    paste0("# Written by autospec::write_dv_suite() on ", format(Sys.Date()), "."),
     "# Each step builds one DV. Edit freely: this file is not overwritten.",
     paste0("# Run just this topic with run_dv_suite(df, \"", suite_dir, "\", topics = \"", topic, "\")."),
     if (nrow(elsewhere) > 0L) {
@@ -893,8 +893,8 @@ settings_file_lines <- function(household_id = "hhserial") {
 test_helper_lines <- function() {
   c(
     "# Loaded before the example tests: makes the suite available as `suite`.",
-    "library(wealthdv)",
-    "options(wealthdv.quiet = TRUE)",
+    "library(autospec)",
+    "options(autospec.quiet = TRUE)",
     "suite <- suppressMessages(read_dv_suite(\"..\"))"
   )
 }

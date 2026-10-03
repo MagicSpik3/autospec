@@ -1,4 +1,4 @@
-# A config like read_wealthdv_config() returns, with everything in a temporary folder
+# A config like read_autospec_config() returns, with everything in a temporary folder
 fake_config <- function(topics = character(), all_topics = "test", sheet_priority = character()) {
   project <- tempfile("project")
   output_folder <- file.path(project, "outputs")

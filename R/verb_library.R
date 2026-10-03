@@ -96,10 +96,10 @@ show_verbs <- function(verbs = NULL) {
 #' @keywords internal
 #' @noRd
 read_package_csv <- function(file_name) {
-  path <- system.file("extdata", file_name, package = "wealthdv")
+  path <- system.file("extdata", file_name, package = "autospec")
 
   if (!nzchar(path)) {
-    cli::cli_alert_danger("{.file {file_name}} is missing from the installed package. Run setup_wealthdv.R again.")
+    cli::cli_alert_danger("{.file {file_name}} is missing from the installed package. Run setup_autospec.R again.")
     stop("Cannot find inst/extdata/", file_name, call. = FALSE)
   }
 
@@ -119,7 +119,7 @@ registered_verbs <- function() {
 #' @keywords internal
 #' @noRd
 verb_formals <- function(verb) {
-  formals(get(verb, envir = asNamespace("wealthdv"), mode = "function"))
+  formals(get(verb, envir = asNamespace("autospec"), mode = "function"))
 }
 
 

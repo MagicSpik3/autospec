@@ -1,8 +1,8 @@
-#' Create the wealthdv config file for a round
+#' Create the autospec config file for a round
 #'
-#' Writes `wealthdv_config.yaml`: every file path and setting the pipeline needs
+#' Writes `autospec_config.yaml`: every file path and setting the pipeline needs
 #' for one survey round, with a comment on each. Edit it, then read it with
-#' [read_wealthdv_config()]. An existing file is left alone unless
+#' [read_autospec_config()]. An existing file is left alone unless
 #' `overwrite = TRUE`.
 #'
 #' @param path Where to write the config.
@@ -14,9 +14,9 @@
 #'
 #' @examples
 #' \dontrun{
-#' create_wealthdv_config(round = 10)
+#' create_autospec_config(round = 10)
 #' }
-create_wealthdv_config <- function(path = "wealthdv_config.yaml", round = NULL,
+create_autospec_config <- function(path = "autospec_config.yaml", round = NULL,
                                    overwrite = FALSE) {
   if (!is.null(round)) {
     check_round(round, "round")
@@ -37,16 +37,16 @@ create_wealthdv_config <- function(path = "wealthdv_config.yaml", round = NULL,
   cli::cli_ol(c(
     "Open it and set {.field round} and {.field data_file}.",
     "Check {.field spec_folder} points at this round's spec workbooks.",
-    "Run {.code config <- read_wealthdv_config()} to check everything is found."
+    "Run {.code config <- read_autospec_config()} to check everything is found."
   ))
 
   invisible(path)
 }
 
 
-#' Read and check the wealthdv config file
+#' Read and check the autospec config file
 #'
-#' Reads `wealthdv_config.yaml`, fills in `{round}` wherever it appears, and
+#' Reads `autospec_config.yaml`, fills in `{round}` wherever it appears, and
 #' reports what it finds: the spec workbooks, the data file, and where outputs
 #' go. The output folder is created if it does not exist.
 #'
@@ -67,13 +67,13 @@ create_wealthdv_config <- function(path = "wealthdv_config.yaml", round = NULL,
 #'
 #' @examples
 #' \dontrun{
-#' config <- read_wealthdv_config()
+#' config <- read_autospec_config()
 #' config$spec_files
 #' }
-read_wealthdv_config <- function(path = "wealthdv_config.yaml") {
+read_autospec_config <- function(path = "autospec_config.yaml") {
   if (!is.character(path) || length(path) != 1L || !file.exists(path)) {
     cli::cli_alert_danger(
-      "Cannot find the config file {.file {path}}. Create one with {.code create_wealthdv_config()}."
+      "Cannot find the config file {.file {path}}. Create one with {.code create_autospec_config()}."
     )
     stop("Cannot find the config file.", call. = FALSE)
   }
@@ -96,7 +96,7 @@ read_wealthdv_config <- function(path = "wealthdv_config.yaml") {
 
   if (length(missing_fields) > 0L) {
     cli::cli_alert_danger(
-      "{.file {path}} is missing {.field {missing_fields}}. Compare it with a fresh one from {.code create_wealthdv_config()}."
+      "{.file {path}} is missing {.field {missing_fields}}. Compare it with a fresh one from {.code create_autospec_config()}."
     )
     stop("The config file is missing settings.", call. = FALSE)
   }
@@ -188,15 +188,15 @@ read_wealthdv_config <- function(path = "wealthdv_config.yaml") {
 }
 
 
-#' Stop unless given a config read by read_wealthdv_config()
+#' Stop unless given a config read by read_autospec_config()
 #' @keywords internal
 #' @noRd
 check_config_object <- function(config) {
   needed <- c("round", "spec_files", "output_folder", "suite_folder", "plan_file", "all_topics")
 
   if (!is.list(config) || length(setdiff(needed, names(config))) > 0L) {
-    cli::cli_alert_danger("{.arg config} must be the result of {.code read_wealthdv_config()}.")
-    stop("`config` is not a wealthdv config.", call. = FALSE)
+    cli::cli_alert_danger("{.arg config} must be the result of {.code read_autospec_config()}.")
+    stop("`config` is not a autospec config.", call. = FALSE)
   }
 
   invisible(NULL)
@@ -218,14 +218,14 @@ chosen_topics <- function(config, topics = config$topics) {
 #' in the `topics` argument of [trial_run()], [sync_dv_suite()] and
 #' [run_dv_suite()].
 #'
-#' @param config The config from [read_wealthdv_config()].
+#' @param config The config from [read_autospec_config()].
 #'
 #' @return A data frame of `topic`, `spec_file` and `chosen`, invisibly.
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' show_topics(read_wealthdv_config())
+#' show_topics(read_autospec_config())
 #' }
 show_topics <- function(config) {
   check_config_object(config)
@@ -324,7 +324,7 @@ fill_round <- function(text, round) {
 #' @keywords internal
 #' @noRd
 report_config <- function(config) {
-  cli::cli_h1("wealthdv config for Round {config$round}")
+  cli::cli_h1("autospec config for Round {config$round}")
 
   if (!dir.exists(config$spec_folder)) {
     cli::cli_alert_warning("Spec folder {.file {config$spec_folder}} does not exist.")
@@ -401,7 +401,7 @@ config_template_lines <- function(round = NULL) {
   quote_yaml <- function(text) paste0("'", gsub("'", "''", text, fixed = TRUE), "'")
 
   c(
-    "# wealthdv settings for one survey round.",
+    "# autospec settings for one survey round.",
     "#",
     "# Edit the values after the colons. Keep text in single quotes and use forward",
     "# slashes (/) in paths. Wherever you write {round}, the round number is filled in.",
@@ -411,7 +411,7 @@ config_template_lines <- function(round = NULL) {
     "",
     "# Folder holding the DV specification workbooks, and the pattern their file names follow",
     "spec_folder: 'specs'",
-    "spec_pattern: '_DV_Spec_R{round}.*[.]xlsx$'",
+    "spec_pattern: '_DV_Spec_R{round}.*[.](xlsx|csv)$'",
     "",
     "# Sheets in the spec workbooks that hold no derivations, matched exactly (spaces count)",
     "exclude_sheets:",

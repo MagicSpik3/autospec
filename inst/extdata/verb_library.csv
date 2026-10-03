@@ -1,0 +1,15 @@
+verb,what_it_does,spec_wording_it_matches
+dv_annualise,Annualises a value to a different period for a derived variable.,annualise
+dv_any_to_household,Flags whether anyone in a household matches a condition.,any in household
+dv_band_midpoint,Maps a band code to a midpoint using the lookup table.,band midpoint
+dv_clear_sentinels,Replaces sentinel codes in a value with a chosen replacement.,clear sentinels
+dv_copy,Copies a source column to a new derived variable.,copy
+dv_difference,Subtracts one value from another to form a difference.,difference
+dv_discount_to_present_value,Discounts a future amount back to present value at a target age.,discount to present value
+dv_flag_any_of,Flags whether any given values match a set of accepted values.,flag any of
+dv_flag_if,Flags whether a condition is true for each row.,if
+dv_flag_positive,Flags whether a numeric value is above a threshold.,positive
+dv_keep_if,Copies a value where a condition is true, else a default value.,keep if
+dv_ratio,Divides one numeric value by another and handles zeros safely.,ratio
+dv_row_total,Adds a set of numeric values together, with a choice over missing handling.,row total
+dv_sum_to_household,Totals a numeric value across households.,sum to household

@@ -8,7 +8,7 @@
 #' one, so the discount rate and sentinel choices made there apply.
 #'
 #' @param df The data to add DVs to.
-#' @param config The config from [read_wealthdv_config()].
+#' @param config The config from [read_autospec_config()].
 #' @param topics Topic names to run; defaults to `topics` in the config, or
 #'   every topic when that is empty. Steps in other topics that build an input
 #'   are run too.
@@ -21,7 +21,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' config <- read_wealthdv_config()
+#' config <- read_autospec_config()
 #' trial <- trial_run(was_data, config, topics = "property_wealth")
 #' }
 trial_run <- function(df, config, topics = config$topics, plan = NULL) {

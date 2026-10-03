@@ -1,5 +1,5 @@
 test_that("with no plan, the next step is to draft one", {
-  status <- suppressMessages(wealthdv_status(fake_config()))
+  status <- suppressMessages(autospec_status(fake_config()))
 
   expect_match(status$next_step, "no plan yet")
 })
@@ -9,7 +9,7 @@ test_that("with no suite, the next step is to write it", {
   config <- fake_config()
   suppressMessages(write_dv_plan(fake_plan_row("copy_a", "dv_copy", args = "source_col = \"a\""), config$plan_file))
 
-  status <- suppressMessages(wealthdv_status(config))
+  status <- suppressMessages(autospec_status(config))
 
   expect_match(status$next_step, "Write the suite")
 })
@@ -25,7 +25,7 @@ test_that("signed-off stubs send you to sync, and the table counts them", {
   plan$status <- "reviewed"
   suppressMessages(write_dv_plan(plan, config$plan_file))
 
-  status <- suppressMessages(wealthdv_status(config))
+  status <- suppressMessages(autospec_status(config))
 
   expect_match(status$next_step, "sync")
   expect_identical(status$topics$signed_off, 2L)
@@ -45,7 +45,7 @@ test_that("DVs still to decide come first", {
   )
   suppressMessages(write_dv_plan(plan, config$plan_file))
 
-  status <- suppressMessages(wealthdv_status(config))
+  status <- suppressMessages(autospec_status(config))
 
   expect_match(status$next_step, "more than one row")
   expect_identical(status$topics$duplicates_to_decide, 1L)
@@ -60,7 +60,7 @@ test_that("rows signed off with no name, or that are not derivations, are pointe
   )
   suppressMessages(write_dv_plan(plan, config$plan_file))
 
-  messages <- messages_from(wealthdv_status(config))
+  messages <- messages_from(autospec_status(config))
 
   expect_true(any(grepl("no .*reviewed_by", messages)))
   expect_true(any(grepl("not a derivation", messages)))
@@ -75,7 +75,7 @@ test_that("only the chosen topics are shown", {
   )
   suppressMessages(write_dv_plan(plan, config$plan_file))
 
-  status <- suppressMessages(wealthdv_status(config))
+  status <- suppressMessages(autospec_status(config))
 
   expect_identical(status$topics$topic, "income")
 })

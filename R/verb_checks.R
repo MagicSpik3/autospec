@@ -5,7 +5,7 @@ verb_stop <- function(verb, message) {
   text <- paste0(verb, "(): ", message)
 
   # Inside run_dv_suite() the orchestrator prints the failure itself.
-  if (!isTRUE(getOption("wealthdv.in_suite"))) {
+  if (!isTRUE(getOption("autospec.in_suite"))) {
     cli::cli_alert_danger(text)
   }
 
@@ -17,7 +17,7 @@ verb_stop <- function(verb, message) {
 #' @keywords internal
 #' @noRd
 report_verb <- function(new_col, text) {
-  if (!isTRUE(getOption("wealthdv.quiet"))) {
+  if (!isTRUE(getOption("autospec.quiet"))) {
     cli::cli_alert_success("{new_col}: {text}")
   }
 

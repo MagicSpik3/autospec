@@ -183,7 +183,7 @@ run_suite_tests <- function(suite_dir, problems) {
   }
 
   if (!requireNamespace("testthat", quietly = TRUE)) {
-    cli::cli_alert_danger("The testthat package is needed to run the example tests. Run setup_wealthdv.R to install it.")
+    cli::cli_alert_danger("The testthat package is needed to run the example tests. Run setup_autospec.R to install it.")
     stop("testthat is not installed.", call. = FALSE)
   }
 
@@ -231,7 +231,7 @@ check_step_code <- function(step, known_columns, suite_columns = known_columns) 
   for (verb_call in code_verb_calls(code, registered_verbs())) {
     verb <- as.character(verb_call[[1L]])
     matched <- tryCatch(
-      match.call(get(verb, envir = asNamespace("wealthdv")), verb_call),
+      match.call(get(verb, envir = asNamespace("autospec")), verb_call),
       error = function(problem) problem
     )
 

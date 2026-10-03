@@ -89,6 +89,15 @@ make_catalogue <- function(
   entries <- list()
 
   for (this_file in excel_path_list) {
+    if (tolower(tools::file_ext(this_file)) == "csv") {
+      entries[[length(entries) + 1L]] <- catalogue_sheet(
+        this_file = this_file,
+        this_sheet = "Sheet1",
+        join = join
+      )
+      next
+    }
+
     sheet_names <- readxl::excel_sheets(this_file)
     sheet_names <- setdiff(sheet_names, exclude_sheets)
 
@@ -138,7 +147,7 @@ make_catalogue <- function(
 #' @keywords internal
 #' @noRd
 catalogue_sheet <- function(this_file, this_sheet, join) {
-  spec_sheet <- get_spec(this_file = this_file, this_sheet = this_sheet)
+  spec_sheet <- read_spec_sheet(this_file = this_file, this_sheet = this_sheet)
 
   header <- attr(spec_sheet, "header", exact = TRUE)
   header_row <- attr(spec_sheet, "header_row", exact = TRUE)

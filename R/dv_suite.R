@@ -107,7 +107,7 @@ read_dv_suite <- function(suite_dir = "dv_suite", topics = NULL) {
     topic_files <- topic_files[available %in% topics]
   }
 
-  settings_env <- new.env(parent = asNamespace("wealthdv"))
+  settings_env <- new.env(parent = asNamespace("autospec"))
   source_suite_file(settings_file, settings_env)
 
   settings <- get0("settings", envir = settings_env, inherits = FALSE)
@@ -215,7 +215,7 @@ run_dv_suite <- function(df, suite = "dv_suite", topics = NULL, dvs = NULL,
     )
   }
 
-  old_options <- options(wealthdv.in_suite = TRUE)
+  old_options <- options(autospec.in_suite = TRUE)
   on.exit(options(old_options), add = TRUE)
 
   registered <- registered_verbs()

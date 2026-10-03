@@ -26,7 +26,7 @@ The paths written, invisibly.
 }
 \description{
 The last step on our side. Writes the finished DVs into a folder (usually a
-checkout of the scripts repo) as plain R that needs no wealthdv:
+checkout of the scripts repo) as plain R that needs no autospec:
 }
 \details{
 \itemize{

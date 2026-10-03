@@ -9,8 +9,8 @@ test_that("verbs say what they built", {
 })
 
 
-test_that("the wealthdv.quiet option silences verb reports", {
-  old_options <- options(wealthdv.quiet = TRUE)
+test_that("the autospec.quiet option silences verb reports", {
+  old_options <- options(autospec.quiet = TRUE)
   on.exit(options(old_options))
 
   expect_silent(dv_copy(data.frame(a = 1), "a", "b"))
@@ -20,7 +20,7 @@ test_that("the wealthdv.quiet option silences verb reports", {
 test_that("a verb error is printed outside the suite and left to it inside", {
   expect_message(try(dv_copy(data.frame(a = 1), "z", "b"), silent = TRUE), "not found")
 
-  old_options <- options(wealthdv.in_suite = TRUE)
+  old_options <- options(autospec.in_suite = TRUE)
   on.exit(options(old_options))
 
   expect_silent(try(dv_copy(data.frame(a = 1), "z", "b"), silent = TRUE))

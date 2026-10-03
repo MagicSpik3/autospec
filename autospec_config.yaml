@@ -1,4 +1,4 @@
-# wealthdv settings for one survey round.
+# autospec settings for one survey round.
 #
 # Edit the values after the colons. Keep text in single quotes and use forward
 # slashes (/) in paths. Wherever you write {round}, the round number is filled in.
@@ -10,7 +10,7 @@ round: 9
 spec_folder: 'specs'
 # spec_pattern: '_DV_Spec_R{round}.*[.]xlsx$'
 
-spec_pattern: 'TEST.*[.]xlsx$'
+spec_pattern: 'TEST.*[.](xlsx|csv)$'
 
 
 # Sheets in the spec workbooks that hold no derivations, matched exactly (spaces count)

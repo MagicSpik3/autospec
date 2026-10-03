@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(wealthdv)
+library(autospec)
 
-test_check("wealthdv")
+test_check("autospec")

@@ -9,7 +9,7 @@ trial_run(df, config, topics = config$topics, plan = NULL)
 \arguments{
 \item{df}{The data to add DVs to.}
 
-\item{config}{The config from \code{\link[=read_wealthdv_config]{read_wealthdv_config()}}.}
+\item{config}{The config from \code{\link[=read_autospec_config]{read_autospec_config()}}.}
 
 \item{topics}{Topic names to run; defaults to \code{topics} in the config, or
 every topic when that is empty. Steps in other topics that build an input
@@ -32,7 +32,7 @@ one, so the discount rate and sentinel choices made there apply.
 }
 \examples{
 \dontrun{
-config <- read_wealthdv_config()
+config <- read_autospec_config()
 trial <- trial_run(was_data, config, topics = "property_wealth")
 }
 }

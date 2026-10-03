@@ -82,7 +82,7 @@ verb_call_of <- function(derive) {
   }
 
   verb <- as.character(call[[1L]])
-  matched <- match.call(get(verb, envir = asNamespace("wealthdv")), call)
+  matched <- match.call(get(verb, envir = asNamespace("autospec")), call)
 
   list(verb = verb, args = as.list(matched)[-1L])
 }
@@ -95,7 +95,7 @@ verb_call_of <- function(derive) {
 #' @keywords internal
 #' @noRd
 resolve_verb_args <- function(call, derive) {
-  verb_defaults <- formals(get(call$verb, envir = asNamespace("wealthdv")))
+  verb_defaults <- formals(get(call$verb, envir = asNamespace("autospec")))
   verb_defaults <- verb_defaults[vapply(verb_defaults, function(default) !identical(default, quote(expr = )), logical(1L))]
 
   supplied <- call$args[setdiff(names(call$args), "df")]

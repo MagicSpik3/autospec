@@ -4,7 +4,7 @@
 #' inputs, without changing anything. Prints a line per topic and the one
 #' command to run next. Run it whenever unsure where things stand.
 #'
-#' @param config The config from [read_wealthdv_config()].
+#' @param config The config from [read_autospec_config()].
 #' @param data_names Optional column names of the data, to check the suite's
 #'   inputs are there. `names(haven::read_sav(config$data_file, n_max = 0))`
 #'   reads them without loading the data.
@@ -15,9 +15,9 @@
 #'
 #' @examples
 #' \dontrun{
-#' wealthdv_status(read_wealthdv_config())
+#' autospec_status(read_autospec_config())
 #' }
-wealthdv_status <- function(config, data_names = NULL) {
+autospec_status <- function(config, data_names = NULL) {
   check_config_object(config)
 
   cli::cli_h1("Where Round {config$round} has got to")
@@ -31,7 +31,7 @@ wealthdv_status <- function(config, data_names = NULL) {
   if (!file.exists(config$plan_file)) {
     return(finish_status(
       data.frame(topic = topics, stringsAsFactors = FALSE),
-      "There is no plan yet. Draft it from the specs: run the {.field plan} chunk, or Addins > wealthdv: Update the plan."
+      "There is no plan yet. Draft it from the specs: run the {.field plan} chunk, or Addins > autospec: Update the plan."
     ))
   }
 
@@ -76,16 +76,16 @@ wealthdv_status <- function(config, data_names = NULL) {
       "under {.field sheet_priority} in the config or mark the others duplicate in the plan, then update the plan (the {.field plan} chunk)."
     )
   } else if (!suite_exists) {
-    "Write the suite: run the {.field sync} chunk, or Addins > wealthdv: Sync the suite with the plan. Rows not signed off yet become steps to fill in later."
+    "Write the suite: run the {.field sync} chunk, or Addins > autospec: Sync the suite with the plan. Rows not signed off yet become steps to fill in later."
   } else if (length(ready_to_sync) > 0L) {
     paste0(
       length(ready_to_sync), " signed-off DV(s) are still {.code derive = NULL} in the suite. ",
-      "Write them in: run the {.field sync} chunk, or Addins > wealthdv: Sync the suite with the plan."
+      "Write them in: run the {.field sync} chunk, or Addins > autospec: Sync the suite with the plan."
     )
   } else if (to_sign_off > 0L) {
     paste0(
       to_sign_off, " plan row(s) to sign off in {.file ", config$plan_file, "}; sync the suite after each batch. ",
-      "To see output meanwhile, run the {.field trial} chunk, or Addins > wealthdv: Trial run."
+      "To see output meanwhile, run the {.field trial} chunk, or Addins > autospec: Trial run."
     )
   } else if (not_written > 0L) {
     paste0(not_written, " step(s) still need writing by hand in {.file ", config$suite_folder, "}; check with {.code check_dv_suite()} as you go.")
@@ -109,7 +109,7 @@ finish_status <- function(table, next_step) {
 }
 
 
-#' Drop the loaded wealthdv namespace before reinstalling it
+#' Drop the loaded autospec namespace before reinstalling it
 #'
 #' This is an internal helper for the setup script, where a destructive rebuild
 #' is useful while testing a new feature but should remain off by default for
@@ -120,17 +120,17 @@ finish_status <- function(table, next_step) {
 #'   session without an R restart.
 #' @keywords internal
 #' @noRd
-unload_wealthdv_for_reinstall <- function(destructive = FALSE) {
+unload_autospec_for_reinstall <- function(destructive = FALSE) {
   if (!isTRUE(destructive)) {
     return(invisible(FALSE))
   }
 
-  if ("package:wealthdv" %in% search()) {
-    detach("package:wealthdv", unload = TRUE, character.only = TRUE)
+  if ("package:autospec" %in% search()) {
+    detach("package:autospec", unload = TRUE, character.only = TRUE)
   }
 
-  if ("wealthdv" %in% loadedNamespaces()) {
-    unloadNamespace("wealthdv")
+  if ("autospec" %in% loadedNamespaces()) {
+    unloadNamespace("autospec")
   }
 
   invisible(TRUE)

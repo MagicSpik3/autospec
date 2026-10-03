@@ -47,6 +47,27 @@
 #' }
 get_spec <- function(this_file, this_sheet, header_search_rows = 10L) {
 
+  read_spec_sheet(this_file, this_sheet, header_search_rows)
+}
+
+
+#' Read one specification sheet, whether from Excel or a CSV export.
+#' @keywords internal
+#' @noRd
+read_spec_sheet <- function(this_file, this_sheet, header_search_rows = 10L) {
+  if (tolower(tools::file_ext(this_file)) == "csv") {
+    return(read_csv_spec(this_file, this_sheet, header_search_rows))
+  }
+
+  get_spec_excel(this_file, this_sheet, header_search_rows)
+}
+
+
+#' Read an Excel spec sheet via readxl.
+#' @keywords internal
+#' @noRd
+get_spec_excel <- function(this_file, this_sheet, header_search_rows = 10L) {
+
   # Read without column names so that the header row is preserved as data and
   # can be located. readxl supplies placeholder names, which are replaced by
   # the Excel column references below.
@@ -145,6 +166,104 @@ get_spec <- function(this_file, this_sheet, header_search_rows = 10L) {
     "preamble",
     raw_sheet[seq_len(header_row), ]
   )
+
+  spec_sheet[]
+}
+
+
+#' Read a CSV spec file as a single sheet.
+#' @keywords internal
+#' @noRd
+read_csv_spec <- function(this_file, this_sheet, header_search_rows = 10L) {
+  lines <- readLines(this_file, warn = FALSE, encoding = "UTF-8")
+  lines <- lines[!grepl("^\\s*#", lines) & !grepl("^\\s*$", lines)]
+
+  if (length(lines) == 0L) {
+    stop(
+      "CSV spec file ", sQuote(this_file), " contains no data rows.",
+      call. = FALSE
+    )
+  }
+
+  raw_sheet <- utils::read.csv(
+    text = paste(lines, collapse = "\n"),
+    header = FALSE,
+    stringsAsFactors = FALSE,
+    check.names = FALSE,
+    blank.lines.skip = FALSE,
+    quote = '"',
+    na.strings = c("", "NA")
+  )
+
+  data.table::setDT(raw_sheet)
+
+  if (ncol(raw_sheet) == 0L || nrow(raw_sheet) == 0L) {
+    stop(
+      "CSV spec file ", sQuote(this_file), " is empty.",
+      call. = FALSE
+    )
+  }
+
+  data.table::setnames(
+    raw_sheet,
+    paste0("col_", excel_letters(ncol(raw_sheet)))
+  )
+
+  rows_to_search <- seq_len(min(header_search_rows, nrow(raw_sheet)))
+  header_row <- NA_integer_
+
+  for (this_row in rows_to_search) {
+    candidate <- normalise_header(
+      unlist(raw_sheet[this_row], use.names = FALSE)
+    )
+
+    if (any(candidate == "derivation")) {
+      header_row <- this_row
+      break
+    }
+  }
+
+  if (is.na(header_row)) {
+    stop(
+      "No header row containing 'Derivation' was found in the first ",
+      length(rows_to_search),
+      " rows of CSV spec ",
+      sQuote(this_file),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  header <- unlist(raw_sheet[header_row], use.names = FALSE)
+
+  if (ncol(raw_sheet) < 7L) {
+    stop(
+      "The CSV spec ", sQuote(this_file), " has only ",
+      ncol(raw_sheet),
+      " columns. Column G is column 7.",
+      call. = FALSE
+    )
+  }
+
+  if (header_row >= nrow(raw_sheet)) {
+    spec_sheet <- raw_sheet[0L, ]
+    spec_sheet[, excel_row := integer()]
+  } else {
+    spec_sheet <- raw_sheet[
+      seq.int(from = header_row + 1L, to = nrow(raw_sheet)),
+    ]
+
+    spec_sheet[, excel_row := seq.int(
+      from = header_row + 1L,
+      to = nrow(raw_sheet)
+    )]
+  }
+
+  spec_sheet[, column_g_original := col_G]
+
+  data.table::setattr(spec_sheet, "header_row", header_row)
+  data.table::setattr(spec_sheet, "header", header)
+  data.table::setattr(spec_sheet, "preamble", raw_sheet[seq_len(header_row), ])
 
   spec_sheet[]
 }

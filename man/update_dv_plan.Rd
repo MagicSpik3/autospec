@@ -7,7 +7,7 @@
 update_dv_plan(config, data_names = NULL)
 }
 \arguments{
-\item{config}{The config from \code{\link[=read_wealthdv_config]{read_wealthdv_config()}}.}
+\item{config}{The config from \code{\link[=read_autospec_config]{read_autospec_config()}}.}
 
 \item{data_names}{Optional column names of the input data. When given, every
 input matching neither a DV nor a data column is noted in the plan.}
@@ -29,7 +29,7 @@ off; the backup holds any others.
 }
 \examples{
 \dontrun{
-config <- read_wealthdv_config()
+config <- read_autospec_config()
 update_dv_plan(config)
 }
 }

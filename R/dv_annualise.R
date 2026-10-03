@@ -74,7 +74,7 @@ dv_annualise <- function(df, amount_col, period_col, new_col, target = "annual",
     if (!requireNamespace("was.utils", quietly = TRUE)) {
       verb_stop(verb, paste(
         "the was.utils package is needed for its period multipliers.",
-        "Run setup_wealthdv.R, which installs it, or give the spec's period_codes and multipliers."
+        "Run setup_autospec.R, which installs it, or give the spec's period_codes and multipliers."
       ))
     }
 

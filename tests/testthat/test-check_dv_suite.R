@@ -125,7 +125,7 @@ test_that("a filled-in example test passes, and a wrong one fails", {
     "})"
   ), file.path(suite_dir, "topic.R"))
   writeLines(
-    c("library(wealthdv)", "suite <- suppressMessages(read_dv_suite(\"..\"))"),
+    c("library(autospec)", "suite <- suppressMessages(read_dv_suite(\"..\"))"),
     file.path(suite_dir, "tests", "helper-suite.R")
   )
   writeLines(c(

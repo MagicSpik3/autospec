@@ -1,9 +1,9 @@
-# How to run wealthdv
+# How to run autospec
 
 A step-by-step guide to going from the DV specs to a dataset with DVs in it.
 The code for each step is in `run_pipeline.Rmd`; the chunk name is given in
 brackets, like (`plan`). The same steps are in RStudio's **Addins** menu under
-*wealthdv*.
+*autospec*.
 
 This is for the DV team. The team that applies the DVs never sees any of it:
 they get plain R scripts (step 8) in their own repo, with an Excel config and
@@ -22,14 +22,14 @@ a short script that adds the DVs to their data.
 Every chunk is safe to run again. Nothing you edit by hand (sign-offs in the
 plan, code in the suite) is ever overwritten.
 
-**Not sure what to do next?** Run the `status` chunk, or *Addins > wealthdv:
+**Not sure what to do next?** Run the `status` chunk, or *Addins > autospec:
 Where am I?*. It shows each topic's progress and names the next step.
 
 ## Before you start
 
-- **Set up** (once, and after pulling new code): open `wealthdv.Rproj`, restart
-  R, run `source("setup_wealthdv.R")`.
-- **Config**: in `wealthdv_config.yaml`, check `round`, `data_file` and
+- **Set up** (once, and after pulling new code): open `autospec.Rproj`, restart
+  R, run `source("setup_autospec.R")`.
+- **Config**: in `autospec_config.yaml`, check `round`, `data_file` and
   `spec_folder`. Everything else follows from those.
 - **Topics** (optional): to work on some specs only, list them under `topics`
   in the config. `show_topics(config)` lists the names, such as
@@ -217,7 +217,7 @@ before it starts and stops, saying what to change, if a file would run before
 one it needs. The export warns about this too.
 | `README.md` | How to run it, and which DVs are not yet built. |
 
-They need R with `haven` and `readxl`, not wealthdv. Each block is
+They need R with `haven` and `readxl`, not autospec. Each block is
 self-contained, so they can edit one DV without touching another; to rerun one
 DV they run its block.
 
