@@ -1,0 +1,75 @@
+Variable Name,Label ,Value Labels,Notes ,Variable Name,Label ,Derivation,Value Labels,Notes ,Variable Name,Label ,Derivation,Value Labels,Notes 
+,,,,,,,,,,,,,
+Input Variables ,,,,Person,,,,,Household ,,,,
+,,,,Mail Order,,,,,,,,,
+,,,,,,,,,,,,,
+var_a,Number of catalogues currently being paid,,,,,,,,,,,,
+,,,,,,,,,,,,,
+var_b(1-2),Year expects to pay off balance for catalogue ,,,var_c(1-2),Years until expected Mail Order (1-2) repayment date,"IF var_a > 0  AND var_b(1-2) > 0 AND var_d(1-2) > 0 THEN
+var_c(1-2) = var_b(1-2) - YearR9",,"Difference in years between the expected repayment end date and interview year. 
+",,,,,
+var_d(1-2),Month expects to pay off balance for catalogue ,,,var_e(1-2),Month offset to expected Mail Order (1-2) repayment date,"IF var_a > 0  AND var_b(1-2) > 0 AND var_d(1-2) > 0 THEN
+var_e(1-2) = var_d(1-2) - MonthR9",,"Difference in months between the expected repayment end date and interview month. 
+",,,,,
+,,,,var_h(1-2),Number of monthly installments left to pay mail order,"IF var_c(1-2) ==0  AND  var_e(1-2) ==0 THEN 
+    var_h(1-2) = 1
+ELIF var_c(1-2) ==0  AND  var_e(1-2) ==-1 THEN 
+    var_h(1-2) = 1
+ELSE var_h(1-2) = var_c(1-2)*12 + var_e(1-2)",,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,Where var_h = 0 (as year and month of interview equals year and month of final payment of mail order) set var_h = 1 to allow for final payment,,,,,
+,,,,,,,,,,,,,
+var_g(1-2), ,"1.0: 'Weekly', 
+2.0: 'Fortnightly', 
+3.0: 'Monthly', 
+4.0: 'Eight-weekly', 
+5.0: 'Quarterly', 
+6.0: 'In one lump sum', 
+7.0: 'Other'",,var_f(1-2),Amount outstanding on (1-2) mail order account,"IF var_g(1-2) = 1 THEN 
+    var_f(1-2) = var_h(1-2)*(var_i(1-2)*52/12)",,,,,,,
+var_i(1-2),Amount in £ of instalments for catalogue,,,,,"IF var_g(1-2) = 2 THEN 
+    var_f(1-2) = var_h(1-2) * (var_i(1-2)*26/12)",,,,,,,
+,,,,,,"    IF var_g(1-2) = 3 THEN 
+        var_f(1-2) = var_h(1-2) * var_i(1-2)",,,,,,,
+,,,,,,"    IF var_g(1-2) = 4 THEN 
+        var_f(1-2) = var_h(1-2) * (var_i(1-2)*13/24)",,,,,,,
+,,,,,,"    IF var_g(1-2) = 5 THEN 
+        var_f(1-2) = var_h(1-2) * (var_i(1-2)*(4/12))",,,,,,,
+,,,,,,"    IF var_g(1-2) = 6 THEN 
+         var_f(1-2) = var_i(1-2)",,,,,,,
+,,,,,,,,,,,,,
+,,,,var_j,Has mail order ,"IF var_f(1)>0 OR var_f(2) > 0 THEN 
+    var_j = 1 
+ELSE
+    var_j = 0","1 = Yes, 0 = No",,,,,,
+,,,,,,,,,,,,,
+,,,,var_m,Total outstanding on mail order,var_m = var_f(1) +  var_f(2),,,var_n ,Hhold value of outstanding mail order accounts,aggregate from person level (var_m),,
+,,,,,,,,,,,,,
+,,,,Mail Order Arrears,,,,,,,,,
+,,,,,,,,,,,,,
+var_o(1-2),Whether keeping up with repayments on catalogue 1," 1.0: 'Keeping up with repayments', 2.0: 'Two or more consecutive repayments behind'",,var_p,Whether has arrears on Mail Order account,"IF ANY(2, var_o(1-2)) then var_p = 1 (otherwise 0) ","1 = Yes, 0 = No",,,,,,
+var_r(1-2),Amount in £ owed on missed payments for catalogue 1,,,var_s(1-2),Total amount owed (1-2) mail order arrears,var_s(1-2) = var_r(1-2),,,,,,,
+,,,,var_t,Total outstanding on mail order arrears,var_t = var_s(1) + var_s(2),,NR TO CHECK: Just check about BNPL vs. MO etc. and R8-R9,var_u,Hhold value of mail order arrears,aggregate from person level (var_t),,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,

@@ -1,0 +1,29 @@
+# Columns referenced by name inside data.table expressions are not visible to
+# R CMD check, which reports them as undefined global variables.
+utils::globalVariables(
+  c(
+    "block",
+    "block_column",
+    "continuation",
+    "derivation_col",
+    "excel_row",
+    "file_name",
+    "instructions",
+    "label",
+    "label_col",
+    "section",
+    "sheet_name",
+    "statement",
+    "structure",
+    "variable",
+    "variable_col",
+    "inputs",
+    "level",
+    "missing_code",
+    "notes",
+    "outputs",
+    "parse_notes",
+    "parse_status",
+    "value_labels"
+  )
+)

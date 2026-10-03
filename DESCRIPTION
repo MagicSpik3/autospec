@@ -1,0 +1,27 @@
+Package: autospec
+Title: Build fnctions from pseudo code Specifications
+Version: 0.0.0.9
+Author: Mark London
+Maintainer: Mark London <mark.london@ons.gov.uk>
+Description: Reads derived variable (DV) specification workbooks, drafts a plan
+    matching each DV to a small library of building blocks, writes the plan
+    as editable R code (the DV suite), and runs, checks and tests that suite
+    against survey data. Written for the Wealth and Assets Survey; the survey
+    conventions live in the config and the suite's settings.
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0
+Imports: 
+    cli,
+    data.table,
+    openxlsx,
+    readxl,
+    stats,
+    tools,
+    utils,
+    yaml
+Suggests: 
+    haven,
+    testthat (>= 3.0.0),
+    was.utils
+Config/testthat/edition: 3
