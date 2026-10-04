@@ -913,6 +913,13 @@ test_stub_lines <- function(topic, stubs, header = TRUE) {
 
   blocks <- lapply(stubs, function(step) {
     inputs <- step$inputs
+    uid <- step$uid
+    has_uid <- is.character(uid) && length(uid) == 1L && !is.na(uid) && nzchar(uid)
+    test_name <- if (has_uid) {
+      paste0("Requirement UID ", uid, ": ", step$dv, " follows the spec")
+    } else {
+      paste0(step$dv, " follows the spec")
+    }
 
     given_lines <- if (length(inputs) == 0L) {
       "  given <- data.frame(row = 1:2)"
@@ -927,8 +934,12 @@ test_stub_lines <- function(topic, stubs, header = TRUE) {
 
     c(
       "",
-      paste0("test_that(\"", step$dv, " follows the spec\", {"),
+      paste0("test_that(\"", test_name, "\", {"),
       paste0("  skip(\"", step$dv, " is not written yet\")"),
+      if (has_uid) {
+         paste0('  expect_identical(suite$steps[["', step$dv,
+           '"]]$uid, "', uid, '")')
+      },
       "",
       given_lines,
       "  expected <- c(NA, NA)",

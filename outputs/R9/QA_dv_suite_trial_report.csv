@@ -1,0 +1,15 @@
+topic,dv,uid,outcome,detail
+test_all_verbs_csv,var_a,dv_000001,built,""
+test_all_verbs_csv,row_total,dv_000002,built,""
+test_all_verbs_csv,difference,dv_000003,built,""
+test_all_verbs_csv,positive_flag,dv_000004,built,""
+test_all_verbs_csv,var_j,dv_000005,built,""
+test_all_verbs_csv,any_choice,dv_000006,built,""
+test_all_verbs_csv,clean_value,dv_000007,built,""
+test_all_verbs_csv,ratio,dv_000008,built,""
+test_all_verbs_csv,annualised,dv_000009,built,""
+test_all_verbs_csv,midpoint,dv_000010,built,""
+test_all_verbs_csv,var_f,dv_000011,built,""
+test_all_verbs_csv,present_value,dv_000012,failed,dv_discount_to_present_value(): `rate` must be supplied; set it in settings.R from the pension rates lookup.
+test_all_verbs_csv,hh_total,dv_000013,built,""
+test_all_verbs_csv,hh_any,dv_000014,built,""

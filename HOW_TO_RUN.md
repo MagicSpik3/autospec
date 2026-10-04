@@ -1,13 +1,17 @@
 # How to run autospec
 
 A step-by-step guide to going from the DV specs to a dataset with DVs in it.
-The code for each step is in `run_pipeline.Rmd`; the chunk name is given in
-brackets, like (`plan`). The same steps are in RStudio's **Addins** menu under
-*autospec*.
+The code is split at the human plan review: use `run_pipeline.Rmd` to draft the
+plan, review it, then continue in `run_pipeline_after_review.Rmd`. Chunk names
+are given in brackets, like (`plan`). The same steps are in RStudio's
+**Addins** menu under *autospec*.
 
 This is for the DV team. The team that applies the DVs never sees any of it:
 they get plain R scripts (step 8) in their own repo, with an Excel config and
 a short script that adds the DVs to their data.
+
+For a self-contained management walkthrough, knit
+[`demos/hello_world.Rmd`](demos/hello_world.Rmd).
 
 ## The idea
 

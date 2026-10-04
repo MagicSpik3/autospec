@@ -148,7 +148,10 @@ unload_autospec_for_reinstall <- function(destructive = FALSE) {
 #'   `found_in_data` flag is `TRUE` only for names present in the data.
 #' @param path Optional CSV file path to write the table to.
 #'
-#' @return A data frame with one row per distinct input variable.
+#' @return A data frame with one row per distinct input variable: `found_in_data`
+#'   says whether the original data has it, `provided_by_dvs` lists any suite
+#'   steps that create it, and `available` is true when either source provides
+#'   it. `used_by_dvs` and `used_by_uids` identify its consumers.
 #' @export
 #' @examples
 #' 
@@ -183,18 +186,38 @@ make_required_input_table <- function(plan, data_names = NULL, path = NULL) {
     table <- data.frame(
       variable = character(),
       found_in_data = logical(),
+      provided_by_dvs = character(),
+      available = logical(),
       used_by_dvs = character(),
+      used_by_uids = character(),
       stringsAsFactors = FALSE
     )
   } else {
+    found_in_data <- if (is.null(data_names)) {
+      rep(NA, length(all_inputs))
+    } else {
+      tolower(all_inputs) %in% tolower(data_names)
+    }
+    provided_by_dvs <- vapply(all_inputs, function(variable) {
+      producers <- rows$dv[!is_blank(rows$dv) & tolower(rows$dv) == tolower(variable)]
+      paste(unique(producers), collapse = "; ")
+    }, character(1L))
+    used_by <- lapply(all_inputs, function(variable) {
+      which(!is_blank(rows$inputs) & vapply(rows$inputs, function(value) {
+        variable %in% expand_variable_names(split_plan_list(value))
+      }, logical(1L)))
+    })
+
     table <- data.frame(
       variable = all_inputs,
-      found_in_data = if (is.null(data_names)) NA else tolower(all_inputs) %in% tolower(data_names),
-      used_by_dvs = vapply(all_inputs, function(variable) {
-        uses <- rows$dv[!is_blank(rows$inputs) & vapply(rows$inputs, function(value) {
-          variable %in% expand_variable_names(split_plan_list(value))
-        }, logical(1L))]
-        paste(unique(uses), collapse = "; ")
+      found_in_data = found_in_data,
+      provided_by_dvs = provided_by_dvs,
+      available = if (is.null(data_names)) NA else found_in_data | nzchar(provided_by_dvs),
+      used_by_dvs = vapply(used_by, function(index) paste(unique(rows$dv[index]), collapse = "; "), character(1L)),
+      used_by_uids = vapply(used_by, function(index) {
+        if (!"uid" %in% names(rows)) return("")
+        uids <- rows$uid[index]
+        paste(unique(uids[!is_blank(uids)]), collapse = "; ")
       }, character(1L)),
       stringsAsFactors = FALSE
     )

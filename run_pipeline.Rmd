@@ -1,0 +1,91 @@
+---
+title: "Run Pipeline: Before Review"
+author: "Mark London"
+date: "2026-09-08"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(autospec)
+library(data.table)
+read_pipeline_data <- function(path, n_max = NULL) {
+	extension <- tolower(tools::file_ext(path))
+
+	if (extension == "csv") {
+		return(utils::read.csv(
+			path,
+			nrows = if (is.null(n_max)) -1L else n_max,
+			check.names = FALSE
+		))
+	}
+
+	if (extension == "sav") {
+		if (is.null(n_max)) return(haven::read_sav(path))
+		return(haven::read_sav(path, n_max = n_max))
+	}
+
+	stop("data_file must be a .csv or .sav file.", call. = FALSE)
+}
+```
+Run the chunks from top to bottom. Every chunk is safe to run again: nothing
+you edit by hand (sign-offs in the plan, code in the suite) is overwritten.
+When unsure what to do next, run the `status` chunk. The same steps are in
+RStudio's Addins menu under autospec.
+Settings
+Every file path and the round number live in `autospec_config.yaml`. For a new
+round, change `round` and `data_file` there. To work on some topics only, list
+them under `topics`; `show_topics(config)` lists them.
+```{r config}
+config <- read_autospec_config("autospec_config.yaml")
+# The data's column names, read without loading its rows
+data_names <- names(read_pipeline_data(config$data_file, n_max = 0))
+```
+Where am I?
+Shows, per topic, how many rows are signed off and still to sign off, any DVs
+defined twice that need a decision, how much of the suite is written, and
+the chunk to run next.
+```{r status}
+autospec_status(config, data_names)
+```
+1. Update the plan
+Reads the specs, saves the catalogue, and writes `dv_plan.csv`. Run it the first
+time, and again whenever the specs change: sign-offs whose spec text has not
+changed are kept, the old plan is backed up, and what changed is listed.
+DVs defined on more than one sheet with different text are listed in
+`QA_duplicate_dvs.csv`. Settle a whole sheet at once by listing the preferred
+sheet under `sheet_priority` in the config and running this chunk again.
+```{r plan, eval=FALSE}
+update_dv_plan(config, data_names)
+```
+1a. Required inputs audit
+Writes `inputs.csv` in the output folder, listing every distinct input variable
+used by the current plan and whether it was found in the loaded data. When
+`name_case` is set to `"lower"`, the variable names are lower-cased before the
+check and before writing to CSV.
+```{r inputs, eval=FALSE}
+plan <- read_dv_plan(config$plan_file)
+input_table <- make_required_input_table(plan, data_names = data_names)
+if (identical(config$name_case, "lower")) {
+input_table$variable <- tolower(input_table$variable)
+input_table$found_in_data <- tolower(input_table$variable) %in% tolower(data_names)
+}
+input_table <- input_table[, c("variable", "found_in_data")]
+data.table::fwrite(input_table, file.path(config$output_folder, "inputs.csv"))
+cli::cli_alert_success("Input audit saved to {.file {file.path(config$output_folder, 'inputs.csv')}}.")
+```
+2. Trial run (optional, any time)
+Tries every drafted DV on the data, with nothing signed off. It uses a
+throwaway folder, so the plan and the suite are not touched. Change `topics`
+to try a few topics; steps in other topics that build their inputs run too.
+```{r trial, eval=FALSE}
+was_data <- read_pipeline_data(config$data_file)
+trial <- trial_run(was_data, config, topics = config$topics)
+```
+3. Review the plan
+Open `dv_plan.csv` in Excel. For each row, compare `verb`, `args` and
+`condition` with `instructions` and read `notes`. When it is right, set `status`
+to `reviewed` and fill in `reviewed_by` and `reviewed_on`. Rows marked
+`duplicate` or `not_a_derivation` need nothing. Only mark rows reviewed that
+have been checked: to see output first, use the trial run.
+Stop here for plan review. Save the reviewed `dv_plan.csv`, then continue with
+[`run_pipeline_after_review.Rmd`](run_pipeline_after_review.Rmd).

@@ -79,6 +79,36 @@ export_quietly <- function(suite_dir, scripts_dir = tempfile("scripts"), data = 
 }
 
 
+run_exported_scripts <- function(scripts_dir) {
+  executable <- file.path(
+    R.home("bin"),
+    paste0("Rscript", if (.Platform$OS.type == "windows") ".exe" else "")
+  )
+  stdout_file <- tempfile()
+  stderr_file <- tempfile()
+  on.exit(unlink(c(stdout_file, stderr_file)))
+
+  scripts_dir <- normalizePath(scripts_dir, winslash = "/", mustWork = TRUE)
+  expression <- paste0(
+    "setwd(", encodeString(scripts_dir, quote = "\""), "); source('run_dvs.R')"
+  )
+  status <- system2(
+    executable,
+    c("--vanilla", "-e", shQuote(expression)),
+    stdout = stdout_file,
+    stderr = stderr_file
+  )
+
+  list(
+    status = as.integer(status),
+    log = c(
+      readLines(stdout_file, warn = FALSE),
+      readLines(stderr_file, warn = FALSE)
+    )
+  )
+}
+
+
 test_that("every verb exports as plain R that matches the suite", {
   scripts_dir <- export_quietly(export_example_suite())
 
@@ -114,10 +144,10 @@ test_that("run_dvs.R reads the config, builds the DVs and saves rds and sav", {
 
   set_run_config(file.path(scripts_dir, "dv_config.xlsx"), data_file = data_file, save_as = save_as)
 
-  rscript <- file.path(R.home("bin"), "Rscript")
-  log <- system2(rscript, c("--vanilla", "-e", shQuote(paste0("setwd('", scripts_dir, "'); source('run_dvs.R')"))),
-                 stdout = TRUE, stderr = TRUE)
+  run <- run_exported_scripts(scripts_dir)
+  log <- run$log
 
+  expect_identical(run$status, 0L, info = paste(log, collapse = "\n"))
   expect_true(file.exists(paste0(save_as, ".rds")), info = paste(log, collapse = "\n"))
   expect_true(file.exists(paste0(save_as, ".sav")))
 
@@ -370,24 +400,28 @@ test_that("run_dvs.R runs files in the Order given and stops when it cannot work
   data_file <- file.path(scripts_dir, "input.csv")
   utils::write.csv(export_example_data(), data_file, row.names = FALSE)
   config_file <- file.path(scripts_dir, "dv_config.xlsx")
-  rscript <- file.path(R.home("bin"), "Rscript")
   run_scripts <- function() {
-    system2(rscript, c("--vanilla", "-e", shQuote(paste0("setwd('", scripts_dir, "'); source('run_dvs.R')"))),
-            stdout = TRUE, stderr = TRUE)
+    run_exported_scripts(scripts_dir)
   }
 
   set_run_config(config_file, data_file = data_file, save_as = file.path(scripts_dir, "output"),
                  order = c(`savings.R` = 5, `debt.R` = 9))
-  log <- run_scripts()
+  result <- run_scripts()
+  log <- result$log
+  expect_identical(result$status, 0L, info = paste(log, collapse = "\n"))
   expect_true(any(grepl("Running, in this order: savings.R > debt.R", log)), info = paste(log, collapse = "\n"))
 
   set_run_config(config_file, order = c(`savings.R` = 2, `debt.R` = 1))
-  log <- run_scripts()
+  result <- run_scripts()
+  log <- result$log
+  expect_true(result$status > 0L, info = paste(log, collapse = "\n"))
   expect_true(any(grepl("debt.R uses DVs from savings.R, so on the Topics sheet give savings.R a lower Order", log)),
               info = paste(log, collapse = "\n"))
 
   set_run_config(config_file, order = c(`savings.R` = 1, `debt.R` = 1))
-  log <- run_scripts()
+  result <- run_scripts()
+  log <- result$log
+  expect_true(result$status > 0L, info = paste(log, collapse = "\n"))
   expect_true(any(grepl("share an Order number", log)), info = paste(log, collapse = "\n"))
 })
 
@@ -415,10 +449,10 @@ test_that("topic files match the data's case and run_dvs.R keeps the data's spel
   save_as <- file.path(scripts_dir, "output")
   set_run_config(file.path(scripts_dir, "dv_config.xlsx"), data_file = data_file, save_as = save_as)
 
-  rscript <- file.path(R.home("bin"), "Rscript")
-  log <- system2(rscript, c("--vanilla", "-e", shQuote(paste0("setwd('", scripts_dir, "'); source('run_dvs.R')"))),
-                 stdout = TRUE, stderr = TRUE)
+  run <- run_exported_scripts(scripts_dir)
+  log <- run$log
 
+  expect_identical(run$status, 0L, info = paste(log, collapse = "\n"))
   result <- readRDS(paste0(save_as, ".rds"))
   expected <- suppressMessages(run_dv_suite(upper_data, export_example_suite()))
   expect_true(all(names(upper_data) %in% names(result)), info = paste(log, collapse = "\n"))

@@ -80,11 +80,16 @@ test_that("the synced suite builds the DVs", {
 
 test_that("a file is backed up before it changes, and a new stub gets a test", {
   suite_dir <- suite_before_sign_off()
-  suppressMessages(sync_dv_suite(signed_off_plan(), suite_dir, data_names = data_names))
+  plan <- signed_off_plan()
+  plan$uid[plan$dv == "brand_new"] <- "spec_row_0042"
+  suppressMessages(sync_dv_suite(plan, suite_dir, data_names = data_names))
 
   backups <- list.files(file.path(suite_dir, "_backup"), recursive = TRUE)
   expect_true(any(basename(backups) == "test.R"))
-  expect_true(any(grepl("brand_new follows the spec", readLines(file.path(suite_dir, "tests", "test-test.R")))))
+  test_lines <- readLines(file.path(suite_dir, "tests", "test-test.R"))
+  expect_true(any(grepl("Requirement UID spec_row_0042: brand_new follows the spec", test_lines, fixed = TRUE)))
+  expect_true(any(grepl('suite$steps[["brand_new"]]$uid, "spec_row_0042"', test_lines, fixed = TRUE)))
+  expect_silent(parse(file.path(suite_dir, "tests", "test-test.R")))
 })
 
 

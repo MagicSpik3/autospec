@@ -1,0 +1,18 @@
+Variable Name,Label,Value Labels,Notes,Variable Name,Label,Derivation,Value Labels,Notes,Variable Name,Label,Derivation,Value Labels,Notes
+Input Variables,,,,Person,,,,,Household,,,,
+,,,,var_a,Copy value,source_value,,,,,,,
+,,,,row_total,Row total,left_value + right_value,,,,,,,
+,,,,difference,Difference,left_value - right_value,,,,,,,
+,,,,positive_flag,Positive flag,IF score > 0 THEN positive_flag = 1 ELSE positive_flag = 0,,,,,,,
+,,,,var_j,Category flag,"IF category IN (1, 2) THEN var_j = 1 ELSE var_j = 0",,,, ,,,
+,,,,any_choice,Any choice,"IF ANY(2, choice_a, choice_b) THEN any_choice = 1 ELSE any_choice = 0",,,,,,,
+,,,,clean_value,Clean value,"clean_value = raw_value; IF clean_value < 0 THEN clean_value = 0",,,,,,,
+,,,,ratio,Ratio,"IF denominator > 0 THEN ratio = numerator / denominator ELSE ratio = 0",,,,,,,
+,,,,annualised,Annualised amount,"IF period = 1 THEN annualised = amount * 52
+IF period = 2 THEN annualised = amount * 26
+IF period = 3 THEN annualised = amount * 12",,,,,,,
+,,,,midpoint,Band midpoint,Mid-point taken from gcontvbR9_i banded amount,,,,,,,
+,,,,var_f,Kept amount,IF category = 2 THEN var_f = amount ELSE var_f = 0,,,,,,,
+,,,,present_value,Present value,present_value = future_amount / (1 + 0.05) ^ (66 - age),,,,,,,
+,,,,,,,,,hh_total,Household total,aggregate from person level (var_a),,
+,,,,,,,,,hh_any,Anyone positive,MAX(positive_flag) (Aggregated from person level),,

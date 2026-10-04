@@ -118,6 +118,18 @@ test_that("a guarded division matches dv_ratio", {
 })
 
 
+test_that("a present-value formula drafts the discount verb", {
+  match <- match_verb("pv = amount / (1 + 0.05) ^ (66 - age)", "pv", "person")
+
+  expect_identical(match$verb, "dv_discount_to_present_value")
+  expect_identical(match$status, "needs_review")
+  expect_identical(match$args$amount_col, "amount")
+  expect_identical(match$args$age_col, "age")
+  expect_true(any(grepl("rate = 0.05", match$reasons)))
+  expect_true(any(grepl("target_age = 66", match$reasons)))
+})
+
+
 test_that("a period table matches dv_annualise for review", {
   text <- paste(
     "IF p = 1 THEN d = amt * 52",

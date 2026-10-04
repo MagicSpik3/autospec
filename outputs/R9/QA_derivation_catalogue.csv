@@ -1,0 +1,17 @@
+uid,file_name,sheet_name,block,block_column,level,section,excel_row,variable,label,value_labels,notes,instructions,outputs,inputs,parse_status,parse_notes
+dv_000001,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,3,var_a,Copy value,,,source_value,,source_value,parsed,
+dv_000002,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,4,row_total,Row total,,,left_value + right_value,,left_value; right_value,parsed,
+dv_000003,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,5,difference,Difference,,,left_value - right_value,,left_value; right_value,parsed,
+dv_000004,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,6,positive_flag,Positive flag,,,IF score > 0 THEN positive_flag = 1 ELSE positive_flag = 0,positive_flag,score,parsed,
+dv_000005,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,7,var_j,Category flag,,,"IF category IN (1, 2) THEN var_j = 1 ELSE var_j = 0",var_j,category,parsed,
+dv_000006,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,8,any_choice,Any choice,,,"IF ANY(2, choice_a, choice_b) THEN any_choice = 1 ELSE any_choice = 0",any_choice,choice_a; choice_b,parsed,
+dv_000007,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,9,clean_value,Clean value,,,clean_value = raw_value; IF clean_value < 0 THEN clean_value = 0,clean_value,raw_value,parsed,
+dv_000008,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,10,ratio,Ratio,,,IF denominator > 0 THEN ratio = numerator / denominator ELSE ratio = 0,ratio,denominator; numerator,parsed,
+dv_000009,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,11,annualised,Annualised amount,,,"IF period = 1 THEN annualised = amount * 52
+IF period = 2 THEN annualised = amount * 26
+IF period = 3 THEN annualised = amount * 12",annualised,period; amount,parsed,
+dv_000010,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,12,midpoint,Band midpoint,,,Mid-point taken from gcontvbR9_i banded amount,midpoint,gcontvbR9_i,midpoint,
+dv_000011,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,13,var_f,Kept amount,,,IF category = 2 THEN var_f = amount ELSE var_f = 0,var_f,category; amount,parsed,
+dv_000012,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,14,present_value,Present value,,,present_value = future_amount / (1 + 0.05) ^ (66 - age),present_value,future_amount; age,parsed,
+dv_000013,specs/TEST_ALL_VERBS.csv,Sheet1,Household,L,household,Household,15,hh_total,Household total,,,aggregate from person level (var_a),,var_a,parsed,
+dv_000014,specs/TEST_ALL_VERBS.csv,Sheet1,Household,L,household,Household,16,hh_any,Anyone positive,,,MAX(positive_flag) (Aggregated from person level),,positive_flag,parsed,

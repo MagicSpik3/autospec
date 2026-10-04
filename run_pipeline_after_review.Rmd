@@ -1,0 +1,99 @@
+---
+title: "Run Pipeline: After Review"
+author: "Mark London"
+date: "2026-10-03"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(autospec)
+library(data.table)
+read_pipeline_data <- function(path, n_max = NULL) {
+  extension <- tolower(tools::file_ext(path))
+
+  if (extension == "csv") {
+    return(utils::read.csv(
+      path,
+      nrows = if (is.null(n_max)) -1L else n_max,
+      check.names = FALSE
+    ))
+  }
+
+  if (extension == "sav") {
+    if (is.null(n_max)) return(haven::read_sav(path))
+    return(haven::read_sav(path, n_max = n_max))
+  }
+
+  stop("data_file must be a .csv or .sav file.", call. = FALSE)
+}
+```
+Continue here after reviewing and saving `dv_plan.csv` from
+[`run_pipeline.Rmd`](run_pipeline.Rmd). Each chunk can be rerun; synced code
+that has already been written is preserved.
+```{r config}
+config <- read_autospec_config("autospec_config.yaml")
+data_names <- names(read_pipeline_data(config$data_file, n_max = 0))
+```
+4. Sync the suite with the reviewed plan
+Writes the suite the first time, and after each batch of sign-offs fills in the
+steps that were waiting for them. Steps with code in them, written by hand or
+by an earlier sync, are never touched; changed files are backed up in the
+suite's `_backup` folder.
+```{r sync, eval=FALSE}
+sync_dv_suite(
+  read_dv_plan(config$plan_file),
+  config$suite_folder,
+  data_names = data_names,
+  name_case = config$name_case,
+  topics = config$topics
+)
+```
+Steps still at `derive = NULL` after a sync have no verb that fits: write them
+by hand, copying variable names from the step's `inputs`. To try one:
+```{r step, eval=FALSE}
+was_data <- read_pipeline_data(config$data_file)
+run_dv_step(was_data, read_dv_suite(config$suite_folder), "dv_name")
+```
+5. Check and test
+Run after every edit. `check_dv_suite()` reads the code without touching the
+data; `test_dv_suite()` runs the example tests in the suite's `tests` folder.
+```{r check, eval=FALSE}
+check_dv_suite(config$suite_folder, data_names = data_names)
+test_dv_suite(config$suite_folder)
+```
+6. Build the DVs
+Set the pension discount rate in the suite's `settings.R` first. Steps that
+fail, are not written yet or are missing an input are reported and skipped.
+```{r build, eval=FALSE}
+was_data <- read_pipeline_data(config$data_file)
+was_data <- run_dv_suite(
+  was_data,
+  config$suite_folder,
+  topics = config$topics,
+  report_file = config$report_file
+)
+```
+7. Save the data with DVs
+Saved to `output_data_file` in the config, if it is set.
+```{r save, eval=FALSE}
+if (nzchar(config$output_data_file)) {
+  haven::write_sav(was_data, config$output_data_file)
+  cli::cli_alert_success("Data with DVs saved to {config$output_data_file}.")
+} else {
+  cli::cli_alert_info("output_data_file is blank in the config, so the data was not saved.")
+}
+```
+8. Export the DVs as plain R for the team that applies them
+Writes plain R scripts, with no autospec in them, to `scripts_folder` in the
+config (a checkout of the scripts repo); commit and push from there. The suite
+is checked and tested, and the plain R compared DV by DV with the suite on
+`was_data`, before anything is written. Export from the whole suite, not a
+topic selection.
+```{r export, eval=FALSE}
+export_dv_scripts(
+  config$suite_folder,
+  config$scripts_folder,
+  was_data,
+  title = paste("Spec ", config$round)
+)
+```

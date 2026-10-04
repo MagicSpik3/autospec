@@ -281,6 +281,24 @@ match_verb <- function(text, dv, level = NA_character_, known_names = character(
   if (length(statements) == 1L && statements[[1L]]$type %in% c("assign", "expr")) {
     value <- statements[[1L]]$value
 
+    is_discount <- node_is(value, "bin") && value$op == "/" &&
+      node_is(value$left, "name") && node_is(value$right, "bin") && value$right$op == "^" &&
+      node_is(value$right$left, "bin") && value$right$left$op == "+" &&
+      is_number_node(value$right$left$left, 1) && node_is(value$right$left$right, "num") &&
+      node_is(value$right$right, "bin") && value$right$right$op == "-" &&
+      node_is(value$right$right$left, "num") && node_is(value$right$right$right, "name")
+
+    if (is_discount) {
+      return(draft(
+        "needs_review", "dv_discount_to_present_value",
+        args = list(amount_col = value$left$name, age_col = value$right$right$right$name),
+        why = c(
+          paste("confirm rate =", format_number(value$right$left$right$value), "in settings.R"),
+          paste("confirm target_age =", format_number(value$right$right$left$value), "in settings.R")
+        )
+      ))
+    }
+
     is_group_summary <- node_is(value, "call") && value$fn %in% c("SUM", "MAX") &&
       length(value$args) == 1L && node_is(value$args[[1L]], "name") &&
       nrow(find_number_ranges(value$args[[1L]]$name)) == 0L

@@ -15,7 +15,10 @@ make_required_input_table(plan, data_names = NULL, path = NULL)
 \item{path}{Optional CSV file path to write the table to.}
 }
 \value{
-A data frame with one row per distinct input variable.
+A data frame with one row per distinct input variable: \code{found_in_data}
+says whether the original data has it, \code{provided_by_dvs} lists any suite
+steps that create it, and \code{available} is true when either source provides
+it. \code{used_by_dvs} and \code{used_by_uids} identify its consumers.
 }
 \description{
 A one-row-per-input report, useful for normalising the plan around its input
