@@ -28,14 +28,15 @@ The package was renamed from `wealthdv` to `autospec`. Preserve the user's in-pr
 - `make_required_input_table()` reports raw data presence, producer DVs and producer UIDs.
 - `specs/totals.csv` intentionally lists F before E and D. `test_data/totals_input.csv` supplies A/B/C. The end-to-end test verifies ordinary topological execution E,D,F, blocks F before producer evidence, and runs D then E in separate gated calls before F, including dataframe CSV reload between stages.
 - `demos/hello_world.Rmd` includes all-verbs UID provenance and the staged totals workflow with persistent evidence. Its rendered `demos/hello_world.html` may be regenerated while validating.
+- Stage 4 adds management-oriented prose explaining requirement UIDs, raw versus produced inputs, automatic dependency order versus spec row order, readiness blocking, and why snapshot IDs/signatures matter. No runtime code changed in Stage 4.
 
 ## Verification
 
 - Latest focused persistence tests: `Rscript -e "devtools::test(filter = 'e2e_totals|dv_readiness')"` -> 48 passed, 0 failed.
 - Full package suite after Stage 3: `Rscript -e "devtools::test()"` -> 1012 passed, 0 failed, 3 skipped (`was.utils` absent).
-- The hello-world Rmd rendered successfully with persistent CSV evidence across save/reload.
+- The hello-world Rmd rendered successfully with persistent CSV evidence across save/reload and the Stage 4 management narrative.
 - `devtools::document()` completes but emits existing unresolved-link warnings for internal topics such as `get_spec`, `find_derivation_blocks`, `join_continued_items`, `tokenise_derivation`, `find_number_ranges`, and `parse_derivation`.
 
 ## Current Stage
 
-Stage 3 (durable evidence) is implemented and verified. The ledger is CSV with `evidence_id`, requirement UID, DV, outcome, and suite signature. It uses direct `data.table::fwrite()` writes; atomic replacement is not yet implemented. The user must confirm Stage 3 before any further stage is started. After confirmation, ask which next scope they want; likely candidates are ledger write atomicity, richer evidence provenance, or production workflow integration.
+Stages 1-3 (stable UIDs, readiness gates, durable evidence) are implemented and verified. Stage 4 (management explanation in the hello-world report) is complete and rendered. The ledger is CSV with `evidence_id`, requirement UID, DV, outcome, and suite signature. It uses direct `data.table::fwrite()` writes; atomic replacement is not yet implemented. Before further feature work, ask the user to confirm that the Stage 4 explanation is clear. A sensible next engineering task after confirmation is atomic evidence-ledger replacement, with a unit test for interrupted/failed writes.

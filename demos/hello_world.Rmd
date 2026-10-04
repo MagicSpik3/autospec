@@ -11,6 +11,22 @@ This demo uses the all-verbs test specification and its populated input data. It
 runs in an isolated temporary suite and does not modify the working plan or DV
 suite.
 
+## The idea, plainly
+
+The spec is the requirement; the generated DV is the operation that fulfils
+it. Autospec gives each requirement a UID so the plan, generated step, run
+result and test can all be tied back to the same line of pseudo-code.
+
+An input listed in the audit is not necessarily supposed to be in the original
+CSV. It may be an output of another DV. The audit names that producer and its
+UID; readiness then asks whether that producer actually ran successfully.
+
+If two DVs use only source columns, either can run first. A DV that uses their
+outputs must wait. In a complete suite, Autospec works out a valid order from
+those dependencies; the order of rows in the spec is not the execution order.
+When the work is split across stages, the evidence ledger proves which producer
+UIDs ran successfully before the next stage.
+
 ```{r setup, include=FALSE}
 find_project_root <- function(path = getwd()) {
   path <- normalizePath(path, winslash = "/")
@@ -159,9 +175,11 @@ The test file is [`tests/testthat/test-e2e_all_verbs.R`](../tests/testthat/test-
 
 ## Final totals: readiness by stage
 
-The separate totals spec deliberately lists the final output `F` before its
-producers `E` and `D`. Readiness is based on requirement UIDs and successful
-run evidence, not on row order.
+The totals spec says `D = A + B`, `E = B + C` and `F = D + E`, but lists F
+first to make the dependency visible. D and E are independent: both use only
+source data. F uses their outputs, so it cannot be certified before both
+producer UIDs have successful run evidence. This is a dependency rule, not a
+rule that D must precede E.
 
 ```{r totals-setup}
 totals_plan <- suppressMessages(build_dv_plan(
@@ -190,8 +208,9 @@ suppressMessages(write_dv_suite(
 totals_suite <- suppressMessages(read_dv_suite(totals_suite_dir))
 ```
 
-Before D and E run, the source columns make them ready, while F is blocked by
-their requirement UIDs.
+Before D and E run, A/B/C are present, so both producers are ready. F is
+blocked, even though its future columns are listed as inputs in the plan: D and
+E are not source columns, and their producer requirements have not run yet.
 
 ```{r totals-before}
 readiness_before <- check_dv_readiness(totals_input, totals_suite)
@@ -212,8 +231,8 @@ stopifnot(identical(attr(one_pass, "dv_suite_report")$dv, c("E", "D", "F")))
 
 Run D first and save/reload the data. The evidence ledger restores D's run
 record after CSV serialization removes dataframe attributes. E is independently
-ready from source columns, but F remains blocked until E's producer UID also
-has successful run evidence.
+ready and can now run; F remains blocked because E's producer UID is still
+pending.
 
 ```{r totals-producers}
 totals_after_D <- suppressMessages(run_dv_suite(
@@ -260,8 +279,12 @@ run_evidence <- utils::read.csv(totals_evidence_file, check.names = FALSE)
 knitr::kable(run_evidence[, c("evidence_id", "uid", "dv", "outcome")])
 ```
 
-Only after both producers have successful run evidence is the final total
-ready. `require_ready = TRUE` enforces that boundary.
+After E runs, both producer UIDs are recorded and F becomes ready.
+`require_ready = TRUE` enforces that boundary. The evidence ID names this
+particular input snapshot; use a new ID if the underlying data changes. The
+suite signature also has to match, so editing the producer code or its settings
+does not reuse an old success. `trusted_inputs` is an explicit exception for
+derived columns verified outside this run.
 
 ```{r totals-final}
 final_readiness <- check_dv_readiness(
