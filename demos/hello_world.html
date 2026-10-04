@@ -364,8 +364,14 @@ input data. It runs in an isolated temporary suite and does not modify
 the working plan or DV suite.</p>
 <div id="human-written-spec" class="section level3">
 <h3>Human-written spec</h3>
-<p>Each pseudo-code derivation is catalogued as a requirement. Numbered
-ranges expand to individual outputs, each with its own stable UID.</p>
+<p>Each pseudo-code derivation is catalogued as a requirement. The
+readable <code>REQ-HW-*</code> IDs are authored beside the derivations
+in the spec, so reordering rows does not change requirement identity.
+Numbered ranges receive deterministic child IDs for their individual
+outputs. In each spec block, add an optional
+<code>Requirement UID</code> (or <code>UID</code>) column after
+<code>Notes</code> to assign source IDs; blocks without it continue to
+receive generated legacy IDs.</p>
 <pre class="r"><code>spec_file &lt;- file.path(repo_root, &quot;specs&quot;, &quot;TEST_ALL_VERBS.csv&quot;)
 data_file &lt;- file.path(repo_root, &quot;test_data&quot;, &quot;test_input.csv&quot;)
 input_data &lt;- utils::read.csv(data_file, check.names = FALSE)
@@ -397,28 +403,28 @@ knitr::kable(
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">dv_000001</td>
+<td align="left">REQ-HW-001</td>
 <td align="left">var_a</td>
 <td align="left">dv_copy</td>
 <td align="left">auto</td>
 <td align="left">source_value</td>
 </tr>
 <tr class="even">
-<td align="left">dv_000002</td>
+<td align="left">REQ-HW-002</td>
 <td align="left">row_total</td>
 <td align="left">dv_row_total</td>
 <td align="left">auto</td>
 <td align="left">left_value + right_value</td>
 </tr>
 <tr class="odd">
-<td align="left">dv_000003</td>
+<td align="left">REQ-HW-003</td>
 <td align="left">difference</td>
 <td align="left">dv_difference</td>
 <td align="left">auto</td>
 <td align="left">left_value - right_value</td>
 </tr>
 <tr class="even">
-<td align="left">dv_000004</td>
+<td align="left">REQ-HW-004</td>
 <td align="left">positive_flag</td>
 <td align="left">dv_flag_positive</td>
 <td align="left">auto</td>
@@ -426,7 +432,7 @@ knitr::kable(
 positive_flag = 0</td>
 </tr>
 <tr class="odd">
-<td align="left">dv_000005</td>
+<td align="left">REQ-HW-005</td>
 <td align="left">var_j</td>
 <td align="left">dv_flag_if</td>
 <td align="left">needs_review</td>
@@ -434,7 +440,7 @@ positive_flag = 0</td>
 0</td>
 </tr>
 <tr class="even">
-<td align="left">dv_000006</td>
+<td align="left">REQ-HW-006</td>
 <td align="left">any_choice</td>
 <td align="left">dv_flag_any_of</td>
 <td align="left">auto</td>
@@ -442,7 +448,7 @@ positive_flag = 0</td>
 any_choice = 0</td>
 </tr>
 <tr class="odd">
-<td align="left">dv_000007</td>
+<td align="left">REQ-HW-007</td>
 <td align="left">clean_value</td>
 <td align="left">dv_clear_sentinels</td>
 <td align="left">needs_review</td>
@@ -450,7 +456,7 @@ any_choice = 0</td>
 clean_value = 0</td>
 </tr>
 <tr class="even">
-<td align="left">dv_000008</td>
+<td align="left">REQ-HW-008</td>
 <td align="left">ratio</td>
 <td align="left">dv_ratio</td>
 <td align="left">auto</td>
@@ -458,7 +464,7 @@ clean_value = 0</td>
 denominator ELSE ratio = 0</td>
 </tr>
 <tr class="odd">
-<td align="left">dv_000009</td>
+<td align="left">REQ-HW-009</td>
 <td align="left">annualised</td>
 <td align="left">dv_annualise</td>
 <td align="left">needs_review</td>
@@ -467,13 +473,13 @@ denominator ELSE ratio = 0</td>
 </tbody>
 </table>
 <p>IF period = 2 THEN annualised = amount * 26 IF period = 3 THEN
-annualised = amount * 12 | |dv_000010 |midpoint |dv_band_midpoint |auto
-|Mid-point taken from gcontvbR9_i banded amount | |dv_000011 |var_f
+annualised = amount * 12 | |REQ-HW-010 |midpoint |dv_band_midpoint |auto
+|Mid-point taken from gcontvbR9_i banded amount | |REQ-HW-011 |var_f
 |dv_keep_if |needs_review |IF category = 2 THEN var_f = amount ELSE
-var_f = 0 | |dv_000012 |present_value |dv_discount_to_present_value
+var_f = 0 | |REQ-HW-012 |present_value |dv_discount_to_present_value
 |needs_review |present_value = future_amount / (1 + 0.05) ^ (66 - age) |
-|dv_000013 |hh_total |dv_sum_to_household |auto |aggregate from person
-level (var_a) | |dv_000014 |hh_any |dv_any_to_household |auto
+|REQ-HW-013 |hh_total |dv_sum_to_household |auto |aggregate from person
+level (var_a) | |REQ-HW-014 |hh_any |dv_any_to_household |auto
 |MAX(positive_flag) (Aggregated from person level) |</p>
 </div>
 <div id="input-audit" class="section level3">
@@ -483,18 +489,19 @@ input can still be available when an earlier planned operation creates
 it. The final column shows whether either source supplies it.</p>
 <pre class="r"><code>input_audit &lt;- make_required_input_table(plan, data_names = names(input_data))
 knitr::kable(
-  input_audit[, c(&quot;variable&quot;, &quot;found_in_data&quot;, &quot;provided_by_dvs&quot;, &quot;available&quot;, &quot;used_by_dvs&quot;, &quot;used_by_uids&quot;)],
-  col.names = c(&quot;Input&quot;, &quot;Found in CSV&quot;, &quot;Produced by&quot;, &quot;Available&quot;, &quot;Used by outputs&quot;, &quot;Consumer UIDs&quot;)
+  input_audit[, c(&quot;variable&quot;, &quot;found_in_data&quot;, &quot;provided_by_dvs&quot;, &quot;provided_by_uids&quot;, &quot;available&quot;, &quot;used_by_dvs&quot;, &quot;used_by_uids&quot;)],
+  col.names = c(&quot;Input&quot;, &quot;Found in CSV&quot;, &quot;Produced by&quot;, &quot;Producer UIDs&quot;, &quot;Available&quot;, &quot;Used by outputs&quot;, &quot;Consumer UIDs&quot;)
 )</code></pre>
-<table style="width:100%;">
+<table>
 <colgroup>
-<col width="12%" />
-<col width="12%" />
-<col width="12%" />
-<col width="12%" />
-<col width="9%" />
-<col width="20%" />
-<col width="19%" />
+<col width="11%" />
+<col width="11%" />
+<col width="10%" />
+<col width="11%" />
+<col width="11%" />
+<col width="8%" />
+<col width="17%" />
+<col width="18%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -502,6 +509,7 @@ knitr::kable(
 <th align="left">Input</th>
 <th align="left">Found in CSV</th>
 <th align="left">Produced by</th>
+<th align="left">Producer UIDs</th>
 <th align="left">Available</th>
 <th align="left">Used by outputs</th>
 <th align="left">Consumer UIDs</th>
@@ -513,153 +521,170 @@ knitr::kable(
 <td align="left">age</td>
 <td align="left">TRUE</td>
 <td align="left"></td>
+<td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">present_value</td>
-<td align="left">dv_000012</td>
+<td align="left">REQ-HW-012</td>
 </tr>
 <tr class="even">
 <td align="left">amount</td>
 <td align="left">amount</td>
 <td align="left">TRUE</td>
+<td align="left"></td>
 <td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">annualised; var_f</td>
-<td align="left">dv_000009; dv_000011</td>
+<td align="left">REQ-HW-009; REQ-HW-011</td>
 </tr>
 <tr class="odd">
 <td align="left">category</td>
 <td align="left">category</td>
 <td align="left">TRUE</td>
+<td align="left"></td>
 <td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">var_j; var_f</td>
-<td align="left">dv_000005; dv_000011</td>
+<td align="left">REQ-HW-005; REQ-HW-011</td>
 </tr>
 <tr class="even">
 <td align="left">choice_a</td>
 <td align="left">choice_a</td>
 <td align="left">TRUE</td>
 <td align="left"></td>
+<td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">any_choice</td>
-<td align="left">dv_000006</td>
+<td align="left">REQ-HW-006</td>
 </tr>
 <tr class="odd">
 <td align="left">choice_b</td>
 <td align="left">choice_b</td>
 <td align="left">TRUE</td>
 <td align="left"></td>
+<td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">any_choice</td>
-<td align="left">dv_000006</td>
+<td align="left">REQ-HW-006</td>
 </tr>
 <tr class="even">
 <td align="left">denominator</td>
 <td align="left">denominator</td>
 <td align="left">TRUE</td>
+<td align="left"></td>
 <td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">ratio</td>
-<td align="left">dv_000008</td>
+<td align="left">REQ-HW-008</td>
 </tr>
 <tr class="odd">
 <td align="left">future_amount</td>
 <td align="left">future_amount</td>
 <td align="left">TRUE</td>
+<td align="left"></td>
 <td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">present_value</td>
-<td align="left">dv_000012</td>
+<td align="left">REQ-HW-012</td>
 </tr>
 <tr class="even">
 <td align="left">gcontvbR9_i</td>
 <td align="left">gcontvbR9_i</td>
 <td align="left">TRUE</td>
+<td align="left"></td>
 <td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">midpoint</td>
-<td align="left">dv_000010</td>
+<td align="left">REQ-HW-010</td>
 </tr>
 <tr class="odd">
 <td align="left">left_value</td>
 <td align="left">left_value</td>
 <td align="left">TRUE</td>
 <td align="left"></td>
+<td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">row_total; difference</td>
-<td align="left">dv_000002; dv_000003</td>
+<td align="left">REQ-HW-002; REQ-HW-003</td>
 </tr>
 <tr class="even">
 <td align="left">numerator</td>
 <td align="left">numerator</td>
 <td align="left">TRUE</td>
+<td align="left"></td>
 <td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">ratio</td>
-<td align="left">dv_000008</td>
+<td align="left">REQ-HW-008</td>
 </tr>
 <tr class="odd">
 <td align="left">period</td>
 <td align="left">period</td>
 <td align="left">TRUE</td>
+<td align="left"></td>
 <td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">annualised</td>
-<td align="left">dv_000009</td>
+<td align="left">REQ-HW-009</td>
 </tr>
 <tr class="even">
 <td align="left">positive_flag</td>
 <td align="left">positive_flag</td>
 <td align="left">FALSE</td>
 <td align="left">positive_flag</td>
+<td align="left">REQ-HW-004</td>
 <td align="left">TRUE</td>
 <td align="left">hh_any</td>
-<td align="left">dv_000014</td>
+<td align="left">REQ-HW-014</td>
 </tr>
 <tr class="odd">
 <td align="left">raw_value</td>
 <td align="left">raw_value</td>
 <td align="left">TRUE</td>
+<td align="left"></td>
 <td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">clean_value</td>
-<td align="left">dv_000007</td>
+<td align="left">REQ-HW-007</td>
 </tr>
 <tr class="even">
 <td align="left">right_value</td>
 <td align="left">right_value</td>
 <td align="left">TRUE</td>
 <td align="left"></td>
+<td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">row_total; difference</td>
-<td align="left">dv_000002; dv_000003</td>
+<td align="left">REQ-HW-002; REQ-HW-003</td>
 </tr>
 <tr class="odd">
 <td align="left">score</td>
 <td align="left">score</td>
 <td align="left">TRUE</td>
 <td align="left"></td>
+<td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">positive_flag</td>
-<td align="left">dv_000004</td>
+<td align="left">REQ-HW-004</td>
 </tr>
 <tr class="even">
 <td align="left">source_value</td>
 <td align="left">source_value</td>
 <td align="left">TRUE</td>
 <td align="left"></td>
+<td align="left"></td>
 <td align="left">TRUE</td>
 <td align="left">var_a</td>
-<td align="left">dv_000001</td>
+<td align="left">REQ-HW-001</td>
 </tr>
 <tr class="odd">
 <td align="left">var_a</td>
 <td align="left">var_a</td>
 <td align="left">FALSE</td>
 <td align="left">var_a</td>
+<td align="left">REQ-HW-001</td>
 <td align="left">TRUE</td>
 <td align="left">hh_total</td>
-<td align="left">dv_000013</td>
+<td align="left">REQ-HW-013</td>
 </tr>
 </tbody>
 </table>
@@ -734,7 +759,7 @@ knitr::kable(
   operation_inventory,
   col.names = c(&quot;Requirement UID&quot;, &quot;Output&quot;, &quot;Operation&quot;, &quot;Suite UID&quot;, &quot;Run UID&quot;, &quot;Outcome&quot;, &quot;Test UID&quot;, &quot;Unit test&quot;)
 )</code></pre>
-<table>
+<table style="width:100%;">
 <colgroup>
 <col width="7%" />
 <col width="8%" />
@@ -744,7 +769,7 @@ knitr::kable(
 <col width="5%" />
 <col width="4%" />
 <col width="5%" />
-<col width="40%" />
+<col width="39%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -762,170 +787,170 @@ knitr::kable(
 <tbody>
 <tr class="odd">
 <td align="left">var_a</td>
-<td align="left">dv_000001</td>
+<td align="left">REQ-HW-001</td>
 <td align="left">var_a</td>
 <td align="left">dv_copy</td>
-<td align="left">dv_000001</td>
-<td align="left">dv_000001</td>
+<td align="left">REQ-HW-001</td>
+<td align="left">REQ-HW-001</td>
 <td align="left">built</td>
-<td align="left">dv_000001</td>
-<td align="left">Requirement UID dv_000001: output for var_a matches the
-test data</td>
+<td align="left">REQ-HW-001</td>
+<td align="left">Requirement UID REQ-HW-001: output for var_a matches
+the test data</td>
 </tr>
 <tr class="even">
 <td align="left">row_total</td>
-<td align="left">dv_000002</td>
+<td align="left">REQ-HW-002</td>
 <td align="left">row_total</td>
 <td align="left">dv_row_total</td>
-<td align="left">dv_000002</td>
-<td align="left">dv_000002</td>
+<td align="left">REQ-HW-002</td>
+<td align="left">REQ-HW-002</td>
 <td align="left">built</td>
-<td align="left">dv_000002</td>
-<td align="left">Requirement UID dv_000002: output for row_total matches
-the test data</td>
+<td align="left">REQ-HW-002</td>
+<td align="left">Requirement UID REQ-HW-002: output for row_total
+matches the test data</td>
 </tr>
 <tr class="odd">
 <td align="left">difference</td>
-<td align="left">dv_000003</td>
+<td align="left">REQ-HW-003</td>
 <td align="left">difference</td>
 <td align="left">dv_difference</td>
-<td align="left">dv_000003</td>
-<td align="left">dv_000003</td>
+<td align="left">REQ-HW-003</td>
+<td align="left">REQ-HW-003</td>
 <td align="left">built</td>
-<td align="left">dv_000003</td>
-<td align="left">Requirement UID dv_000003: output for difference
+<td align="left">REQ-HW-003</td>
+<td align="left">Requirement UID REQ-HW-003: output for difference
 matches the test data</td>
 </tr>
 <tr class="even">
 <td align="left">positive_flag</td>
-<td align="left">dv_000004</td>
+<td align="left">REQ-HW-004</td>
 <td align="left">positive_flag</td>
 <td align="left">dv_flag_positive</td>
-<td align="left">dv_000004</td>
-<td align="left">dv_000004</td>
+<td align="left">REQ-HW-004</td>
+<td align="left">REQ-HW-004</td>
 <td align="left">built</td>
-<td align="left">dv_000004</td>
-<td align="left">Requirement UID dv_000004: output for positive_flag
+<td align="left">REQ-HW-004</td>
+<td align="left">Requirement UID REQ-HW-004: output for positive_flag
 matches the test data</td>
 </tr>
 <tr class="odd">
 <td align="left">var_j</td>
-<td align="left">dv_000005</td>
+<td align="left">REQ-HW-005</td>
 <td align="left">var_j</td>
 <td align="left">dv_flag_if</td>
-<td align="left">dv_000005</td>
-<td align="left">dv_000005</td>
+<td align="left">REQ-HW-005</td>
+<td align="left">REQ-HW-005</td>
 <td align="left">built</td>
-<td align="left">dv_000005</td>
-<td align="left">Requirement UID dv_000005: output for var_j matches the
-test data</td>
+<td align="left">REQ-HW-005</td>
+<td align="left">Requirement UID REQ-HW-005: output for var_j matches
+the test data</td>
 </tr>
 <tr class="even">
 <td align="left">any_choice</td>
-<td align="left">dv_000006</td>
+<td align="left">REQ-HW-006</td>
 <td align="left">any_choice</td>
 <td align="left">dv_flag_any_of</td>
-<td align="left">dv_000006</td>
-<td align="left">dv_000006</td>
+<td align="left">REQ-HW-006</td>
+<td align="left">REQ-HW-006</td>
 <td align="left">built</td>
-<td align="left">dv_000006</td>
-<td align="left">Requirement UID dv_000006: output for any_choice
+<td align="left">REQ-HW-006</td>
+<td align="left">Requirement UID REQ-HW-006: output for any_choice
 matches the test data</td>
 </tr>
 <tr class="odd">
 <td align="left">clean_value</td>
-<td align="left">dv_000007</td>
+<td align="left">REQ-HW-007</td>
 <td align="left">clean_value</td>
 <td align="left">dv_clear_sentinels</td>
-<td align="left">dv_000007</td>
-<td align="left">dv_000007</td>
+<td align="left">REQ-HW-007</td>
+<td align="left">REQ-HW-007</td>
 <td align="left">built</td>
-<td align="left">dv_000007</td>
-<td align="left">Requirement UID dv_000007: output for clean_value
+<td align="left">REQ-HW-007</td>
+<td align="left">Requirement UID REQ-HW-007: output for clean_value
 matches the test data</td>
 </tr>
 <tr class="even">
 <td align="left">ratio</td>
-<td align="left">dv_000008</td>
+<td align="left">REQ-HW-008</td>
 <td align="left">ratio</td>
 <td align="left">dv_ratio</td>
-<td align="left">dv_000008</td>
-<td align="left">dv_000008</td>
+<td align="left">REQ-HW-008</td>
+<td align="left">REQ-HW-008</td>
 <td align="left">built</td>
-<td align="left">dv_000008</td>
-<td align="left">Requirement UID dv_000008: output for ratio matches the
-test data</td>
+<td align="left">REQ-HW-008</td>
+<td align="left">Requirement UID REQ-HW-008: output for ratio matches
+the test data</td>
 </tr>
 <tr class="odd">
 <td align="left">annualised</td>
-<td align="left">dv_000009</td>
+<td align="left">REQ-HW-009</td>
 <td align="left">annualised</td>
 <td align="left">dv_annualise</td>
-<td align="left">dv_000009</td>
-<td align="left">dv_000009</td>
+<td align="left">REQ-HW-009</td>
+<td align="left">REQ-HW-009</td>
 <td align="left">built</td>
-<td align="left">dv_000009</td>
-<td align="left">Requirement UID dv_000009: output for annualised
+<td align="left">REQ-HW-009</td>
+<td align="left">Requirement UID REQ-HW-009: output for annualised
 matches the test data</td>
 </tr>
 <tr class="even">
 <td align="left">midpoint</td>
-<td align="left">dv_000010</td>
+<td align="left">REQ-HW-010</td>
 <td align="left">midpoint</td>
 <td align="left">dv_band_midpoint</td>
-<td align="left">dv_000010</td>
-<td align="left">dv_000010</td>
+<td align="left">REQ-HW-010</td>
+<td align="left">REQ-HW-010</td>
 <td align="left">built</td>
-<td align="left">dv_000010</td>
-<td align="left">Requirement UID dv_000010: output for midpoint matches
+<td align="left">REQ-HW-010</td>
+<td align="left">Requirement UID REQ-HW-010: output for midpoint matches
 the test data</td>
 </tr>
 <tr class="odd">
 <td align="left">var_f</td>
-<td align="left">dv_000011</td>
+<td align="left">REQ-HW-011</td>
 <td align="left">var_f</td>
 <td align="left">dv_keep_if</td>
-<td align="left">dv_000011</td>
-<td align="left">dv_000011</td>
+<td align="left">REQ-HW-011</td>
+<td align="left">REQ-HW-011</td>
 <td align="left">built</td>
-<td align="left">dv_000011</td>
-<td align="left">Requirement UID dv_000011: output for var_f matches the
-test data</td>
+<td align="left">REQ-HW-011</td>
+<td align="left">Requirement UID REQ-HW-011: output for var_f matches
+the test data</td>
 </tr>
 <tr class="even">
 <td align="left">present_value</td>
-<td align="left">dv_000012</td>
+<td align="left">REQ-HW-012</td>
 <td align="left">present_value</td>
 <td align="left">dv_discount_to_present_value</td>
-<td align="left">dv_000012</td>
-<td align="left">dv_000012</td>
+<td align="left">REQ-HW-012</td>
+<td align="left">REQ-HW-012</td>
 <td align="left">built</td>
-<td align="left">dv_000012</td>
-<td align="left">Requirement UID dv_000012: output for present_value
+<td align="left">REQ-HW-012</td>
+<td align="left">Requirement UID REQ-HW-012: output for present_value
 matches the test data</td>
 </tr>
 <tr class="odd">
 <td align="left">hh_total</td>
-<td align="left">dv_000013</td>
+<td align="left">REQ-HW-013</td>
 <td align="left">hh_total</td>
 <td align="left">dv_sum_to_household</td>
-<td align="left">dv_000013</td>
-<td align="left">dv_000013</td>
+<td align="left">REQ-HW-013</td>
+<td align="left">REQ-HW-013</td>
 <td align="left">built</td>
-<td align="left">dv_000013</td>
-<td align="left">Requirement UID dv_000013: output for hh_total matches
+<td align="left">REQ-HW-013</td>
+<td align="left">Requirement UID REQ-HW-013: output for hh_total matches
 the test data</td>
 </tr>
 <tr class="even">
 <td align="left">hh_any</td>
-<td align="left">dv_000014</td>
+<td align="left">REQ-HW-014</td>
 <td align="left">hh_any</td>
 <td align="left">dv_any_to_household</td>
-<td align="left">dv_000014</td>
-<td align="left">dv_000014</td>
+<td align="left">REQ-HW-014</td>
+<td align="left">REQ-HW-014</td>
 <td align="left">built</td>
-<td align="left">dv_000014</td>
-<td align="left">Requirement UID dv_000014: output for hh_any matches
+<td align="left">REQ-HW-014</td>
+<td align="left">Requirement UID REQ-HW-014: output for hh_any matches
 the test data</td>
 </tr>
 </tbody>
@@ -934,6 +959,389 @@ the test data</td>
 <pre class="r"><code>devtools::test(filter = &quot;e2e_all_verbs&quot;)</code></pre>
 <p>The test file is <a href="../tests/testthat/test-e2e_all_verbs.R"><code>tests/testthat/test-e2e_all_verbs.R</code></a>.</p>
 </div>
+</div>
+<div id="final-totals-readiness-by-stage" class="section level2">
+<h2>Final totals: readiness by stage</h2>
+<p>The separate totals spec deliberately lists the final output
+<code>F</code> before its producers <code>E</code> and <code>D</code>.
+Readiness is based on requirement UIDs and successful run evidence, not
+on row order.</p>
+<pre class="r"><code>totals_plan &lt;- suppressMessages(build_dv_plan(
+  make_catalogue(file.path(repo_root, &quot;specs&quot;, &quot;totals.csv&quot;)),
+  data_names = names(utils::read.csv(
+    file.path(repo_root, &quot;test_data&quot;, &quot;totals_input.csv&quot;),
+    check.names = FALSE
+  ))
+))
+totals_plan$status &lt;- &quot;reviewed&quot;
+totals_plan$reviewed_by &lt;- &quot;DEMO&quot;
+totals_plan$reviewed_on &lt;- as.character(Sys.Date())
+totals_input &lt;- utils::read.csv(
+  file.path(repo_root, &quot;test_data&quot;, &quot;totals_input.csv&quot;),
+  check.names = FALSE
+)
+totals_suite_dir &lt;- tempfile(&quot;autospec_totals_demo&quot;)
+suppressMessages(write_dv_suite(
+  totals_plan,
+  totals_suite_dir,
+  data_names = names(totals_input),
+  name_case = &quot;spec&quot;
+))
+totals_suite &lt;- suppressMessages(read_dv_suite(totals_suite_dir))</code></pre>
+<p>Before D and E run, the source columns make them ready, while F is
+blocked by their requirement UIDs.</p>
+<pre class="r"><code>readiness_before &lt;- check_dv_readiness(totals_input, totals_suite)
+knitr::kable(readiness_before)</code></pre>
+<table>
+<colgroup>
+<col width="14%" />
+<col width="3%" />
+<col width="6%" />
+<col width="15%" />
+<col width="15%" />
+<col width="29%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">uid</th>
+<th align="left">dv</th>
+<th align="left">ready</th>
+<th align="left">state</th>
+<th align="left">missing_inputs</th>
+<th align="left">blocked_by_uids</th>
+<th align="left">blocked_by_dvs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">REQ-TOTAL-003</td>
+<td align="left">F</td>
+<td align="left">FALSE</td>
+<td align="left">missing_inputs</td>
+<td align="left">D; E</td>
+<td align="left">REQ-TOTAL-001; REQ-TOTAL-002</td>
+<td align="left">D; E</td>
+</tr>
+<tr class="even">
+<td align="left">REQ-TOTAL-002</td>
+<td align="left">E</td>
+<td align="left">TRUE</td>
+<td align="left">ready</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">REQ-TOTAL-001</td>
+<td align="left">D</td>
+<td align="left">TRUE</td>
+<td align="left">ready</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>stopifnot(
+  all(readiness_before$ready[readiness_before$dv %in% c(&quot;D&quot;, &quot;E&quot;)]),
+  !readiness_before$ready[readiness_before$dv == &quot;F&quot;]
+)
+
+one_pass &lt;- suppressMessages(run_dv_suite(
+  totals_input,
+  totals_suite,
+  stop_on_error = TRUE
+))
+knitr::kable(attr(one_pass, &quot;dv_suite_report&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">topic</th>
+<th align="left">dv</th>
+<th align="left">uid</th>
+<th align="left">outcome</th>
+<th align="left">detail</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">totals_csv</td>
+<td align="left">E</td>
+<td align="left">REQ-TOTAL-002</td>
+<td align="left">built</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">totals_csv</td>
+<td align="left">D</td>
+<td align="left">REQ-TOTAL-001</td>
+<td align="left">built</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">totals_csv</td>
+<td align="left">F</td>
+<td align="left">REQ-TOTAL-003</td>
+<td align="left">built</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>stopifnot(identical(attr(one_pass, &quot;dv_suite_report&quot;)$dv, c(&quot;E&quot;, &quot;D&quot;, &quot;F&quot;)))</code></pre>
+<p>Run D first. E is independently ready from source columns, but F
+remains blocked until E’s producer UID also has successful run
+evidence.</p>
+<pre class="r"><code>totals_after_D &lt;- suppressMessages(run_dv_suite(
+  totals_input,
+  totals_suite,
+  dvs = &quot;D&quot;,
+  with_inputs = FALSE,
+  require_ready = TRUE
+))
+knitr::kable(attr(totals_after_D, &quot;dv_suite_report&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">topic</th>
+<th align="left">dv</th>
+<th align="left">uid</th>
+<th align="left">outcome</th>
+<th align="left">detail</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">totals_csv</td>
+<td align="left">D</td>
+<td align="left">REQ-TOTAL-001</td>
+<td align="left">built</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>readiness_after_D &lt;- check_dv_readiness(totals_after_D, totals_suite)
+knitr::kable(readiness_after_D)</code></pre>
+<table>
+<colgroup>
+<col width="16%" />
+<col width="3%" />
+<col width="7%" />
+<col width="17%" />
+<col width="17%" />
+<col width="19%" />
+<col width="17%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">uid</th>
+<th align="left">dv</th>
+<th align="left">ready</th>
+<th align="left">state</th>
+<th align="left">missing_inputs</th>
+<th align="left">blocked_by_uids</th>
+<th align="left">blocked_by_dvs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">REQ-TOTAL-003</td>
+<td align="left">F</td>
+<td align="left">FALSE</td>
+<td align="left">missing_inputs</td>
+<td align="left">E</td>
+<td align="left">REQ-TOTAL-002</td>
+<td align="left">E</td>
+</tr>
+<tr class="even">
+<td align="left">REQ-TOTAL-002</td>
+<td align="left">E</td>
+<td align="left">TRUE</td>
+<td align="left">ready</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">REQ-TOTAL-001</td>
+<td align="left">D</td>
+<td align="left">TRUE</td>
+<td align="left">ready</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>stopifnot(
+  readiness_after_D$ready[readiness_after_D$dv == &quot;E&quot;],
+  !readiness_after_D$ready[readiness_after_D$dv == &quot;F&quot;],
+  identical(readiness_after_D$blocked_by_uids[readiness_after_D$dv == &quot;F&quot;], &quot;REQ-TOTAL-002&quot;)
+)
+
+totals_after_producers &lt;- suppressMessages(run_dv_suite(
+  totals_after_D,
+  totals_suite,
+  dvs = &quot;E&quot;,
+  with_inputs = FALSE,
+  require_ready = TRUE
+))
+knitr::kable(attr(totals_after_producers, &quot;dv_suite_report&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">topic</th>
+<th align="left">dv</th>
+<th align="left">uid</th>
+<th align="left">outcome</th>
+<th align="left">detail</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">totals_csv</td>
+<td align="left">E</td>
+<td align="left">REQ-TOTAL-002</td>
+<td align="left">built</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>knitr::kable(attr(totals_after_producers, &quot;dv_suite_evidence&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">uid</th>
+<th align="left">dv</th>
+<th align="left">outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">REQ-TOTAL-001</td>
+<td align="left">D</td>
+<td align="left">built</td>
+</tr>
+<tr class="even">
+<td align="left">REQ-TOTAL-002</td>
+<td align="left">E</td>
+<td align="left">built</td>
+</tr>
+</tbody>
+</table>
+<p>Only after both producers have successful run evidence is the final
+total ready. <code>require_ready = TRUE</code> enforces that
+boundary.</p>
+<pre class="r"><code>final_readiness &lt;- check_dv_readiness(totals_after_producers, totals_suite, dvs = &quot;F&quot;)
+knitr::kable(final_readiness)</code></pre>
+<table>
+<colgroup>
+<col width="18%" />
+<col width="4%" />
+<col width="8%" />
+<col width="8%" />
+<col width="20%" />
+<col width="21%" />
+<col width="20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">uid</th>
+<th align="left">dv</th>
+<th align="left">ready</th>
+<th align="left">state</th>
+<th align="left">missing_inputs</th>
+<th align="left">blocked_by_uids</th>
+<th align="left">blocked_by_dvs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">REQ-TOTAL-003</td>
+<td align="left">F</td>
+<td align="left">TRUE</td>
+<td align="left">ready</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>stopifnot(final_readiness$ready)
+
+totals_result &lt;- suppressMessages(run_dv_suite(
+  totals_after_producers,
+  totals_suite,
+  dvs = &quot;F&quot;,
+  with_inputs = FALSE,
+  require_ready = TRUE
+))
+knitr::kable(attr(totals_result, &quot;dv_suite_report&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">topic</th>
+<th align="left">dv</th>
+<th align="left">uid</th>
+<th align="left">outcome</th>
+<th align="left">detail</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">totals_csv</td>
+<td align="left">F</td>
+<td align="left">REQ-TOTAL-003</td>
+<td align="left">built</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>knitr::kable(totals_result[, c(&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;, &quot;F&quot;)])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">A</th>
+<th align="right">B</th>
+<th align="right">C</th>
+<th align="right">D</th>
+<th align="right">E</th>
+<th align="right">F</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">10</td>
+<td align="right">100</td>
+<td align="right">11</td>
+<td align="right">110</td>
+<td align="right">121</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">20</td>
+<td align="right">200</td>
+<td align="right">22</td>
+<td align="right">220</td>
+<td align="right">242</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">30</td>
+<td align="right">300</td>
+<td align="right">33</td>
+<td align="right">330</td>
+<td align="right">363</td>
+</tr>
+</tbody>
+</table>
+<p>Running <code>F</code> with <code>require_ready = TRUE</code> against
+the original input is expected to stop until <code>REQ-TOTAL-001</code>
+and <code>REQ-TOTAL-002</code> have succeeded. Set
+<code>trusted_inputs</code> only when pre-existing derived columns have
+been independently verified and are intentionally accepted as upstream
+results.</p>
 </div>
 
 

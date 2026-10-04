@@ -32,6 +32,7 @@ of its derivation column.
 block label or, where there is none, the block's position on the sheet.
 \item \code{section} - the section heading in force, where the sheet uses them.
 \item \code{excel_row} - the worksheet row the derivation starts on.
+\item \code{uid} - the source requirement ID, or a generated legacy ID.
 \item \code{variable}, \code{label} - the variable the derivation defines.
 \item \code{value_labels}, \code{notes} - the block's value labels and notes, including
 any written on continuation rows.
@@ -71,6 +72,11 @@ treated as section headings, such as \verb{Transient debt} or \verb{Heavy debt b
 The catalogue covers every derivation column on a sheet, not only column G.
 Household-level derivations sit in a second block, and restricting the
 catalogue to column G would drop them. See \code{\link[=find_derivation_blocks]{find_derivation_blocks()}}.
+
+A block may have a \verb{Requirement UID} (or \code{UID}) column after its notes. When
+supplied, that source ID is retained in the catalogue. Numbered outputs
+receive deterministic suffixes when expanded; specs without IDs retain
+generated legacy IDs.
 }
 \examples{
 \dontrun{

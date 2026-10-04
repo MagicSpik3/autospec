@@ -18,7 +18,8 @@ make_required_input_table(plan, data_names = NULL, path = NULL)
 A data frame with one row per distinct input variable: \code{found_in_data}
 says whether the original data has it, \code{provided_by_dvs} lists any suite
 steps that create it, and \code{available} is true when either source provides
-it. \code{used_by_dvs} and \code{used_by_uids} identify its consumers.
+it. \code{provided_by_uids}, \code{used_by_dvs} and \code{used_by_uids} provide the
+requirement trace for its producers and consumers.
 }
 \description{
 A one-row-per-input report, useful for normalising the plan around its input

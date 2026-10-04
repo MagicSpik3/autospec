@@ -162,6 +162,183 @@ read_dv_suite <- function(suite_dir = "dv_suite", topics = NULL) {
 }
 
 
+#' Check whether DVs are ready to run against this data
+#'
+#' Inputs from the data are ready immediately. If an input is also produced by
+#' a step in the suite, the producer must have a successful `built` entry in
+#' the data's `dv_suite_report`. Pre-existing derived columns without that UID
+#' evidence remain blocked unless named in `trusted_inputs`.
+#'
+#' @param df Input data, optionally carrying a `dv_suite_report` from an earlier
+#'   [run_dv_suite()] call.
+#' @param suite The suite folder, or a suite from [read_dv_suite()].
+#' @param dvs Optional DVs to check; all steps when omitted.
+#' @param trusted_inputs Data columns explicitly trusted without suite run
+#'   evidence.
+#' @param evidence_file Optional CSV ledger of run evidence across saved and
+#'   reloaded data. Must be supplied with `evidence_id`.
+#' @param evidence_id Identifier for the immutable data snapshot. Keep it the
+#'   same between stages and change it when the source snapshot changes.
+#'
+#' @return One row per requested DV with its UID, readiness state, missing
+#'   inputs, and producer UIDs that have not yet run successfully.
+#' @export
+check_dv_readiness <- function(df, suite, dvs = NULL, trusted_inputs = character(),
+                               evidence_file = NULL, evidence_id = NULL) {
+  if (!is.data.frame(df)) {
+    cli::cli_alert_danger("{.arg df} must be a data frame.")
+    stop("`df` must be a data frame.", call. = FALSE)
+  }
+
+  if (!is.character(trusted_inputs)) {
+    cli::cli_alert_danger("{.arg trusted_inputs} must be a character vector of column names.")
+    stop("`trusted_inputs` must be a character vector.", call. = FALSE)
+  }
+
+  if (!is.null(evidence_file) &&
+      (!is.character(evidence_file) || length(evidence_file) != 1L ||
+       is.na(evidence_file) || !nzchar(evidence_file))) {
+    stop("`evidence_file` must be NULL or one non-empty path.", call. = FALSE)
+  }
+  if (!is.null(evidence_id) &&
+      (!is.character(evidence_id) || length(evidence_id) != 1L ||
+       is.na(evidence_id) || !nzchar(evidence_id))) {
+    stop("`evidence_id` must be NULL or one non-empty snapshot identifier.", call. = FALSE)
+  }
+  if (xor(is.null(evidence_file), is.null(evidence_id))) {
+    stop("`evidence_file` and `evidence_id` must be supplied together.", call. = FALSE)
+  }
+
+  suite <- as_dv_suite(suite)
+  steps <- suite$steps
+
+  if (is.null(dvs) || length(dvs) == 0L) {
+    dvs <- names(steps)
+  }
+
+  positions <- match(tolower(dvs), tolower(names(steps)))
+  if (anyNA(positions)) {
+    stop_unknown_dvs(dvs[is.na(positions)], names(steps))
+  }
+  selected <- steps[positions]
+  selected_names <- names(steps)[positions]
+
+  data_evidence_id <- attr(df, "dv_suite_evidence_id", exact = TRUE)
+  run_report <- if (is.null(evidence_id) || identical(data_evidence_id, evidence_id)) {
+    attr(df, "dv_suite_evidence", exact = TRUE)
+  } else {
+    NULL
+  }
+  if (is.null(run_report) && is.null(evidence_id)) {
+    run_report <- attr(df, "dv_suite_report", exact = TRUE)
+  }
+  if (!is.null(evidence_file) && file.exists(evidence_file)) {
+    ledger <- utils::read.csv(
+      evidence_file,
+      colClasses = "character",
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    required_ledger_columns <- c("evidence_id", "uid", "dv", "outcome", "suite_signature")
+    if (!all(required_ledger_columns %in% names(ledger))) {
+      stop("The readiness evidence file has an invalid format.", call. = FALSE)
+    }
+    ledger <- ledger[ledger$evidence_id == evidence_id, , drop = FALSE]
+    if (nrow(ledger) > 0L) {
+      file_evidence <- ledger[, c("uid", "dv", "outcome", "suite_signature"), drop = FALSE]
+      run_report <- update_dv_suite_evidence(run_report, file_evidence)
+    }
+  }
+  has_built_evidence <- function(step) {
+    if (!is.data.frame(run_report) ||
+      !all(c("dv", "outcome", "suite_signature") %in% names(run_report))) {
+      return(FALSE)
+    }
+
+    rows <- which(tolower(run_report$dv) == tolower(step$dv))
+    if (length(rows) == 0L) {
+      return(FALSE)
+    }
+
+    if (!is.null(step$uid) && length(step$uid) == 1L && !is.na(step$uid) &&
+        nzchar(step$uid) && "uid" %in% names(run_report)) {
+      rows <- rows[!is.na(run_report$uid[rows]) & run_report$uid[rows] == step$uid]
+    }
+
+    signature <- suite_step_signature(step, suite$settings)
+    rows <- rows[!is.na(run_report$suite_signature[rows]) &
+                   run_report$suite_signature[rows] == signature]
+
+    length(rows) > 0L && any(run_report$outcome[rows] == "built")
+  }
+
+  rows <- lapply(seq_along(selected), function(index) {
+    step <- selected[[index]]
+    missing <- character()
+    blocked_uids <- character()
+    blocked_dvs <- character()
+
+    for (input in step$inputs) {
+      data_has_input <- tolower(input) %in% tolower(names(df))
+      is_trusted <- tolower(input) %in% tolower(trusted_inputs)
+      producer_position <- match(tolower(input), tolower(names(steps)))
+      has_producer <- !is.na(producer_position)
+
+      if (!data_has_input) {
+        missing <- c(missing, input)
+      }
+
+      if (has_producer && !is_trusted) {
+        producer <- steps[[producer_position]]
+        if (!has_built_evidence(producer)) {
+          blocked_dvs <- c(blocked_dvs, producer$dv)
+          if (!is.null(producer$uid) && length(producer$uid) == 1L &&
+              !is.na(producer$uid) && nzchar(producer$uid)) {
+            blocked_uids <- c(blocked_uids, producer$uid)
+          }
+        }
+      }
+    }
+
+    missing <- unique(missing)
+    blocked_uids <- unique(blocked_uids)
+    blocked_dvs <- unique(blocked_dvs)
+    written <- is.function(step$derive)
+    ready <- written && length(missing) == 0L && length(blocked_dvs) == 0L
+    state <- if (!written) {
+      "not_written"
+    } else if (length(missing) > 0L) {
+      "missing_inputs"
+    } else if (length(blocked_dvs) > 0L) {
+      "waiting_for_producers"
+    } else {
+      "ready"
+    }
+
+    data.frame(
+      uid = if (is.null(step$uid)) NA_character_ else as.character(step$uid),
+      dv = step$dv,
+      ready = ready,
+      state = state,
+      missing_inputs = paste(missing, collapse = "; "),
+      blocked_by_uids = paste(blocked_uids, collapse = "; "),
+      blocked_by_dvs = paste(blocked_dvs, collapse = "; "),
+      stringsAsFactors = FALSE
+    )
+  })
+
+  if (length(rows) == 0L) {
+    return(data.frame(
+      uid = character(), dv = character(), ready = logical(), state = character(),
+      missing_inputs = character(), blocked_by_uids = character(),
+      blocked_by_dvs = character(), stringsAsFactors = FALSE
+    ))
+  }
+
+  do.call(rbind, rows)
+}
+
+
 #' Build DVs by running the suite
 #'
 #' Runs every step, or only the chosen topics and DVs, in dependency order.
@@ -178,9 +355,20 @@ read_dv_suite <- function(suite_dir = "dv_suite", topics = NULL) {
 #'   that build any input not already in `df`.
 #' @param stop_on_error Whether to stop at the first failing step.
 #' @param report_file Optional CSV path for the report of every step.
+#' @param require_ready Whether selected DVs must have every suite-produced
+#'   input already built and recorded in `dv_suite_report`.
+#' @param trusted_inputs Data columns explicitly trusted without suite run
+#'   evidence when `require_ready = TRUE`.
+#' @param evidence_file Optional CSV ledger for readiness evidence across saved
+#'   and reloaded data. Supply with `evidence_id`.
+#' @param evidence_id Caller-supplied ID for one immutable data snapshot. Use
+#'   the same ID across stages and a new ID when the source snapshot changes.
+#'   Evidence is additionally checked against the current step implementation
+#'   and suite settings.
 #'
 #' @return `df` with the DVs added. The report is attached as the attribute
-#'   `"dv_suite_report"`.
+#'   `"dv_suite_report"`; successful and failed UID outcomes are accumulated in
+#'   `"dv_suite_evidence"` for staged readiness checks.
 #' @export
 #'
 #' @examples
@@ -191,15 +379,88 @@ read_dv_suite <- function(suite_dir = "dv_suite", topics = NULL) {
 #' }
 run_dv_suite <- function(df, suite = "dv_suite", topics = NULL, dvs = NULL,
                          with_inputs = TRUE, stop_on_error = FALSE,
-                         report_file = NULL) {
+                         report_file = NULL, require_ready = FALSE,
+                         trusted_inputs = character(), evidence_file = NULL,
+                         evidence_id = NULL) {
   if (!is.data.frame(df)) {
     cli::cli_alert_danger("{.arg df} must be a data frame.")
     stop("`df` must be a data frame.", call. = FALSE)
   }
 
+  if (!is.logical(require_ready) || length(require_ready) != 1L || is.na(require_ready)) {
+    cli::cli_alert_danger("{.arg require_ready} must be TRUE or FALSE.")
+    stop("`require_ready` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.null(evidence_file) &&
+      (!is.character(evidence_file) || length(evidence_file) != 1L ||
+       is.na(evidence_file) || !nzchar(evidence_file))) {
+    stop("`evidence_file` must be NULL or one non-empty path.", call. = FALSE)
+  }
+  if (!is.null(evidence_id) &&
+      (!is.character(evidence_id) || length(evidence_id) != 1L ||
+       is.na(evidence_id) || !nzchar(evidence_id))) {
+    stop("`evidence_id` must be NULL or one non-empty snapshot identifier.", call. = FALSE)
+  }
+  if (xor(is.null(evidence_file), is.null(evidence_id))) {
+    stop("`evidence_file` and `evidence_id` must be supplied together.", call. = FALSE)
+  }
+
+  data_evidence_id <- attr(df, "dv_suite_evidence_id", exact = TRUE)
+  previous_evidence <- if (is.null(evidence_id) || identical(data_evidence_id, evidence_id)) {
+    attr(df, "dv_suite_evidence", exact = TRUE)
+  } else {
+    NULL
+  }
+  if (is.null(previous_evidence) && is.null(evidence_id)) {
+    previous_evidence <- attr(df, "dv_suite_report", exact = TRUE)
+  }
+
+  if (!is.null(evidence_file) && file.exists(evidence_file)) {
+    ledger <- utils::read.csv(
+      evidence_file,
+      colClasses = "character",
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    required_ledger_columns <- c("evidence_id", "uid", "dv", "outcome", "suite_signature")
+    if (!all(required_ledger_columns %in% names(ledger))) {
+      stop("The readiness evidence file has an invalid format.", call. = FALSE)
+    }
+    ledger <- ledger[ledger$evidence_id == evidence_id, , drop = FALSE]
+    if (nrow(ledger) > 0L) {
+      previous_evidence <- update_dv_suite_evidence(
+        previous_evidence,
+        ledger[, c("uid", "dv", "outcome", "suite_signature"), drop = FALSE]
+      )
+    }
+  }
+
   cli::cli_h1("Building derived variables")
 
   suite <- as_dv_suite(suite)
+
+  if (isTRUE(require_ready)) {
+    readiness_dvs <- dvs
+
+    if (is.null(readiness_dvs) && length(topics) > 0L) {
+      step_topics <- vapply(suite$steps, `[[`, character(1L), "topic")
+      readiness_dvs <- names(suite$steps)[step_topics %in% topics]
+    }
+
+    readiness <- check_dv_readiness(df, suite, dvs = readiness_dvs,
+                                    trusted_inputs = trusted_inputs,
+                                    evidence_file = evidence_file,
+                                    evidence_id = evidence_id)
+    not_ready <- readiness[!readiness$ready, , drop = FALSE]
+
+    if (nrow(not_ready) > 0L) {
+      blocked <- paste0(not_ready$dv, " (", not_ready$state, ")")
+      cli::cli_alert_danger("The requested DVs are not ready: {.val {blocked}}.")
+      stop("Requested DVs are not ready.", call. = FALSE)
+    }
+  }
+
   steps <- select_suite_steps(suite$steps, topics, dvs, with_inputs, names(df))
   steps <- steps[order_suite_steps(steps)]
   renaming <- case_renaming(steps, names(df), settings_column_names(suite$settings))
@@ -222,8 +483,11 @@ run_dv_suite <- function(df, suite = "dv_suite", topics = NULL, dvs = NULL,
   outcomes <- character(length(steps))
   details <- character(length(steps))
   current_topic <- ""
+  processed <- 0L
+  stop_after_evidence <- NULL
 
   for (index in seq_along(steps)) {
+    processed <- index
     step <- steps[[index]]
 
     if (!identical(step$topic, current_topic)) {
@@ -239,19 +503,25 @@ run_dv_suite <- function(df, suite = "dv_suite", topics = NULL, dvs = NULL,
     if (result$outcome == "built") {
       df <- result$df
     } else if (result$outcome == "failed" && stop_on_error) {
-      stop("Building ", step$dv, " failed: ", result$detail, call. = FALSE)
+      if (is.null(evidence_file)) {
+        stop("Building ", step$dv, " failed: ", result$detail, call. = FALSE)
+      }
+      stop_after_evidence <- paste0("Building ", step$dv, " failed: ", result$detail)
+      break
     }
   }
 
+  report_steps <- steps[seq_len(processed)]
   report <- data.frame(
-    topic = as.character(vapply(steps, `[[`, character(1L), "topic")),
-    dv = as.character(names(steps)),
-    uid = vapply(steps, function(step) {
+    topic = as.character(vapply(report_steps, `[[`, character(1L), "topic")),
+    dv = as.character(names(report_steps)),
+    uid = vapply(report_steps, function(step) {
       value <- if (is.null(step$uid)) NA_character_ else step$uid
       if (length(value) == 0L || is.na(value)) NA_character_ else as.character(value)
     }, character(1L)),
-    outcome = outcomes,
-    detail = details,
+    suite_signature = vapply(report_steps, suite_step_signature, character(1L), settings = suite$settings),
+    outcome = outcomes[seq_len(processed)],
+    detail = details[seq_len(processed)],
     stringsAsFactors = FALSE,
     row.names = NULL
   )
@@ -259,14 +529,107 @@ run_dv_suite <- function(df, suite = "dv_suite", topics = NULL, dvs = NULL,
   report_suite_run(report, report_file)
   df <- rename_columns(df, renaming$suite, renaming$data)
 
+  cumulative_evidence <- update_dv_suite_evidence(previous_evidence, report)
+  if (!is.null(evidence_file)) {
+    if (file.exists(evidence_file)) {
+      ledger <- utils::read.csv(
+        evidence_file,
+        colClasses = "character",
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      )
+      required_ledger_columns <- c("evidence_id", "uid", "dv", "outcome", "suite_signature")
+      if (!all(required_ledger_columns %in% names(ledger))) {
+        stop("The readiness evidence file has an invalid format.", call. = FALSE)
+      }
+      ledger <- ledger[ledger$evidence_id != evidence_id, , drop = FALSE]
+    } else {
+      ledger <- data.frame(
+        evidence_id = character(), uid = character(), dv = character(),
+        outcome = character(), suite_signature = character(),
+        stringsAsFactors = FALSE
+      )
+    }
+    current_ledger <- cumulative_evidence[
+      , c("uid", "dv", "outcome", "suite_signature"), drop = FALSE
+    ]
+    current_ledger$evidence_id <- evidence_id
+    ledger <- rbind(ledger, current_ledger[, names(ledger), drop = FALSE])
+    dir.create(dirname(evidence_file), recursive = TRUE, showWarnings = FALSE)
+    data.table::fwrite(ledger, evidence_file)
+  }
+
   if (data.table::is.data.table(df)) {
     df <- data.table::setalloccol(df)
     data.table::setattr(df, "dv_suite_report", report)
+    data.table::setattr(df, "dv_suite_evidence", cumulative_evidence)
+    if (!is.null(evidence_id)) data.table::setattr(df, "dv_suite_evidence_id", evidence_id)
   } else {
     attr(df, "dv_suite_report") <- report
+    attr(df, "dv_suite_evidence") <- cumulative_evidence
+    if (!is.null(evidence_id)) attr(df, "dv_suite_evidence_id") <- evidence_id
+  }
+
+  if (!is.null(stop_after_evidence)) {
+    stop(stop_after_evidence, call. = FALSE)
   }
 
   df
+}
+
+
+#' Keep the latest outcome for each requirement UID across staged runs
+#' @keywords internal
+#' @noRd
+update_dv_suite_evidence <- function(previous, current) {
+  columns <- c("uid", "dv", "outcome", "suite_signature")
+  if (!"suite_signature" %in% names(current)) {
+    current$suite_signature <- NA_character_
+  }
+  current <- current[, columns, drop = FALSE]
+
+  if (!is.data.frame(previous) || !all(columns %in% names(previous))) {
+    if (is.data.frame(previous) && all(c("uid", "dv", "outcome") %in% names(previous))) {
+      previous$suite_signature <- NA_character_
+    }
+    previous <- current[0L, , drop = FALSE]
+  } else {
+    previous <- previous[, columns, drop = FALSE]
+  }
+
+  evidence_key <- function(rows) {
+    has_uid <- !is.na(rows$uid) & nzchar(rows$uid)
+    ifelse(has_uid, paste0("uid:", rows$uid), paste0("dv:", tolower(rows$dv)))
+  }
+
+  current_keys <- evidence_key(current)
+  previous <- previous[!evidence_key(previous) %in% current_keys, , drop = FALSE]
+  rbind(previous, current)
+}
+
+
+#' Signature for the calculation represented by one suite step
+#' @keywords internal
+#' @noRd
+suite_step_signature <- function(step, settings) {
+  derive_text <- if (is.function(step$derive)) {
+    c(
+      paste(deparse(formals(step$derive)), collapse = ""),
+      paste(deparse(body(step$derive)), collapse = "")
+    )
+  } else {
+    "derive = NULL"
+  }
+  payload <- c(
+    as.character(step$uid), step$dv, step$inputs,
+    as.character(step$missing_code),
+    capture.output(dput(settings)),
+    derive_text
+  )
+  path <- tempfile("autospec_step_signature")
+  on.exit(unlink(path), add = TRUE)
+  writeBin(charToRaw(enc2utf8(paste(payload, collapse = "\n"))), path)
+  unname(tools::md5sum(path))
 }
 
 

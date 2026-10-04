@@ -80,7 +80,7 @@ test_that("a header with no derivation gives an empty result", {
   expect_identical(
     names(blocks),
     c("block_column", "derivation_col", "variable_col", "label_col",
-      "value_labels_col", "notes_col")
+      "uid_col", "value_labels_col", "notes_col")
   )
 })
 
@@ -110,6 +110,18 @@ test_that("value labels and notes columns are found within each block", {
 
   expect_identical(blocks$value_labels_col, c(4L, NA_integer_))
   expect_identical(blocks$notes_col, c(5L, 9L))
+})
+
+
+test_that("requirement UID columns are found within each derivation block", {
+  header <- c(
+    "Variable Name", "Label", "Derivation", "Notes", "Requirement UID",
+    "Variable Name", "Label", "Derivation", "Notes", "Requirement UID"
+  )
+
+  blocks <- find_derivation_blocks(header)
+
+  expect_identical(blocks$uid_col, c(5L, 10L))
 })
 
 

@@ -151,7 +151,8 @@ unload_autospec_for_reinstall <- function(destructive = FALSE) {
 #' @return A data frame with one row per distinct input variable: `found_in_data`
 #'   says whether the original data has it, `provided_by_dvs` lists any suite
 #'   steps that create it, and `available` is true when either source provides
-#'   it. `used_by_dvs` and `used_by_uids` identify its consumers.
+#'   it. `provided_by_uids`, `used_by_dvs` and `used_by_uids` provide the
+#'   requirement trace for its producers and consumers.
 #' @export
 #' @examples
 #' 
@@ -187,6 +188,7 @@ make_required_input_table <- function(plan, data_names = NULL, path = NULL) {
       variable = character(),
       found_in_data = logical(),
       provided_by_dvs = character(),
+      provided_by_uids = character(),
       available = logical(),
       used_by_dvs = character(),
       used_by_uids = character(),
@@ -202,6 +204,12 @@ make_required_input_table <- function(plan, data_names = NULL, path = NULL) {
       producers <- rows$dv[!is_blank(rows$dv) & tolower(rows$dv) == tolower(variable)]
       paste(unique(producers), collapse = "; ")
     }, character(1L))
+    provided_by_uids <- vapply(all_inputs, function(variable) {
+      producers <- which(!is_blank(rows$dv) & tolower(rows$dv) == tolower(variable))
+      if (!"uid" %in% names(rows)) return("")
+      uids <- as.character(rows$uid[producers])
+      paste(unique(uids[!is_blank(uids)]), collapse = "; ")
+    }, character(1L))
     used_by <- lapply(all_inputs, function(variable) {
       which(!is_blank(rows$inputs) & vapply(rows$inputs, function(value) {
         variable %in% expand_variable_names(split_plan_list(value))
@@ -212,6 +220,7 @@ make_required_input_table <- function(plan, data_names = NULL, path = NULL) {
       variable = all_inputs,
       found_in_data = found_in_data,
       provided_by_dvs = provided_by_dvs,
+      provided_by_uids = provided_by_uids,
       available = if (is.null(data_names)) NA else found_in_data | nzchar(provided_by_dvs),
       used_by_dvs = vapply(used_by, function(index) paste(unique(rows$dv[index]), collapse = "; "), character(1L)),
       used_by_uids = vapply(used_by, function(index) {

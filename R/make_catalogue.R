@@ -31,6 +31,11 @@
 #' Household-level derivations sit in a second block, and restricting the
 #' catalogue to column G would drop them. See [find_derivation_blocks()].
 #'
+#' A block may have a `Requirement UID` (or `UID`) column after its notes. When
+#' supplied, that source ID is retained in the catalogue. Numbered outputs
+#' receive deterministic suffixes when expanded; specs without IDs retain
+#' generated legacy IDs.
+#'
 #' @param excel_path_list Paths of the specification workbooks to catalogue.
 #' @param exclude_sheets Sheet names to skip. Defaults to
 #'   [default_exclude_sheets()].
@@ -47,6 +52,7 @@
 #'   block label or, where there is none, the block's position on the sheet.
 #' * `section` - the section heading in force, where the sheet uses them.
 #' * `excel_row` - the worksheet row the derivation starts on.
+#' * `uid` - the source requirement ID, or a generated legacy ID.
 #' * `variable`, `label` - the variable the derivation defines.
 #' * `value_labels`, `notes` - the block's value labels and notes, including
 #'   any written on continuation rows.
@@ -231,6 +237,7 @@ catalogue_block <- function(spec_sheet, block_spec, this_file, this_sheet,
   derivation <- spec_sheet[[block_spec$derivation_col]]
   variable <- spec_sheet[[block_spec$variable_col]]
   label <- optional_column("label_col")
+  uid <- optional_column("uid_col")
   value_labels <- optional_column("value_labels_col")
   notes <- optional_column("notes_col")
 
@@ -249,7 +256,7 @@ catalogue_block <- function(spec_sheet, block_spec, this_file, this_sheet,
     trimws(variable[pmax(last_section, 1L)])
   )
 
-  is_empty <- is_blank(variable) & is_blank(label) & is_blank(derivation) &
+  is_empty <- is_blank(variable) & is_blank(label) & is_blank(uid) & is_blank(derivation) &
     is_blank(value_labels) & is_blank(notes)
 
   keep <- !is_section & !is_empty
@@ -270,6 +277,7 @@ catalogue_block <- function(spec_sheet, block_spec, this_file, this_sheet,
     excel_row = spec_sheet$excel_row[keep],
     variable = trimws(variable[keep]),
     label = trimws(label[keep]),
+    uid = trimws(uid[keep]),
     value_labels = trimws(value_labels[keep]),
     notes = trimws(notes[keep]),
     instructions = data.table::fifelse(is_blank(derivation[keep]), NA_character_,
@@ -307,6 +315,7 @@ catalogue_block <- function(spec_sheet, block_spec, this_file, this_sheet,
       excel_row = excel_row[[1L]],
       variable = variable[[1L]],
       label = first_filled(label),
+      uid = first_filled(uid),
       value_labels = join_filled(value_labels),
       notes = join_filled(notes),
       instructions = join_filled(instructions)

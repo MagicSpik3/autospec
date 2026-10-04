@@ -30,8 +30,12 @@ library(autospec)
 
 ### Human-written spec
 
-Each pseudo-code derivation is catalogued as a requirement. Numbered ranges
-expand to individual outputs, each with its own stable UID.
+Each pseudo-code derivation is catalogued as a requirement. The readable
+`REQ-HW-*` IDs are authored beside the derivations in the spec, so reordering
+rows does not change requirement identity. Numbered ranges receive deterministic
+child IDs for their individual outputs. In each spec block, add an optional
+`Requirement UID` (or `UID`) column after `Notes` to assign source IDs; blocks
+without it continue to receive generated legacy IDs.
 
 ```{r catalogue}
 spec_file <- file.path(repo_root, "specs", "TEST_ALL_VERBS.csv")
@@ -55,8 +59,8 @@ whether either source supplies it.
 ```{r input-audit}
 input_audit <- make_required_input_table(plan, data_names = names(input_data))
 knitr::kable(
-  input_audit[, c("variable", "found_in_data", "provided_by_dvs", "available", "used_by_dvs", "used_by_uids")],
-  col.names = c("Input", "Found in CSV", "Produced by", "Available", "Used by outputs", "Consumer UIDs")
+  input_audit[, c("variable", "found_in_data", "provided_by_dvs", "provided_by_uids", "available", "used_by_dvs", "used_by_uids")],
+  col.names = c("Input", "Found in CSV", "Produced by", "Producer UIDs", "Available", "Used by outputs", "Consumer UIDs")
 )
 
 stopifnot(all(input_audit$available))
@@ -152,3 +156,138 @@ devtools::test(filter = "e2e_all_verbs")
 ```
 
 The test file is [`tests/testthat/test-e2e_all_verbs.R`](../tests/testthat/test-e2e_all_verbs.R).
+
+## Final totals: readiness by stage
+
+The separate totals spec deliberately lists the final output `F` before its
+producers `E` and `D`. Readiness is based on requirement UIDs and successful
+run evidence, not on row order.
+
+```{r totals-setup}
+totals_plan <- suppressMessages(build_dv_plan(
+  make_catalogue(file.path(repo_root, "specs", "totals.csv")),
+  data_names = names(utils::read.csv(
+    file.path(repo_root, "test_data", "totals_input.csv"),
+    check.names = FALSE
+  ))
+))
+totals_plan$status <- "reviewed"
+totals_plan$reviewed_by <- "DEMO"
+totals_plan$reviewed_on <- as.character(Sys.Date())
+totals_input <- utils::read.csv(
+  file.path(repo_root, "test_data", "totals_input.csv"),
+  check.names = FALSE
+)
+totals_suite_dir <- tempfile("autospec_totals_demo")
+totals_evidence_file <- file.path(dirname(totals_suite_dir), "totals_run_evidence.csv")
+totals_evidence_id <- "hello-world-totals-snapshot"
+suppressMessages(write_dv_suite(
+  totals_plan,
+  totals_suite_dir,
+  data_names = names(totals_input),
+  name_case = "spec"
+))
+totals_suite <- suppressMessages(read_dv_suite(totals_suite_dir))
+```
+
+Before D and E run, the source columns make them ready, while F is blocked by
+their requirement UIDs.
+
+```{r totals-before}
+readiness_before <- check_dv_readiness(totals_input, totals_suite)
+knitr::kable(readiness_before)
+stopifnot(
+  all(readiness_before$ready[readiness_before$dv %in% c("D", "E")]),
+  !readiness_before$ready[readiness_before$dv == "F"]
+)
+
+one_pass <- suppressMessages(run_dv_suite(
+  totals_input,
+  totals_suite,
+  stop_on_error = TRUE
+))
+knitr::kable(attr(one_pass, "dv_suite_report"))
+stopifnot(identical(attr(one_pass, "dv_suite_report")$dv, c("E", "D", "F")))
+```
+
+Run D first and save/reload the data. The evidence ledger restores D's run
+record after CSV serialization removes dataframe attributes. E is independently
+ready from source columns, but F remains blocked until E's producer UID also
+has successful run evidence.
+
+```{r totals-producers}
+totals_after_D <- suppressMessages(run_dv_suite(
+  totals_input,
+  totals_suite,
+  dvs = "D",
+  with_inputs = FALSE,
+  require_ready = TRUE,
+  evidence_file = totals_evidence_file,
+  evidence_id = totals_evidence_id
+))
+knitr::kable(attr(totals_after_D, "dv_suite_report"))
+totals_after_D_file <- tempfile(fileext = ".csv")
+utils::write.csv(totals_after_D, totals_after_D_file, row.names = FALSE)
+totals_after_D <- utils::read.csv(totals_after_D_file, check.names = FALSE)
+
+readiness_after_D <- check_dv_readiness(
+  totals_after_D,
+  totals_suite,
+  evidence_file = totals_evidence_file,
+  evidence_id = totals_evidence_id
+)
+knitr::kable(readiness_after_D)
+stopifnot(
+  readiness_after_D$ready[readiness_after_D$dv == "E"],
+  !readiness_after_D$ready[readiness_after_D$dv == "F"],
+  identical(readiness_after_D$blocked_by_uids[readiness_after_D$dv == "F"], "REQ-TOTAL-002")
+)
+
+totals_after_producers <- suppressMessages(run_dv_suite(
+  totals_after_D,
+  totals_suite,
+  dvs = "E",
+  with_inputs = FALSE,
+  require_ready = TRUE,
+  evidence_file = totals_evidence_file,
+  evidence_id = totals_evidence_id
+))
+knitr::kable(attr(totals_after_producers, "dv_suite_report"))
+totals_after_producers_file <- tempfile(fileext = ".csv")
+utils::write.csv(totals_after_producers, totals_after_producers_file, row.names = FALSE)
+totals_after_producers <- utils::read.csv(totals_after_producers_file, check.names = FALSE)
+run_evidence <- utils::read.csv(totals_evidence_file, check.names = FALSE)
+knitr::kable(run_evidence[, c("evidence_id", "uid", "dv", "outcome")])
+```
+
+Only after both producers have successful run evidence is the final total
+ready. `require_ready = TRUE` enforces that boundary.
+
+```{r totals-final}
+final_readiness <- check_dv_readiness(
+  totals_after_producers,
+  totals_suite,
+  dvs = "F",
+  evidence_file = totals_evidence_file,
+  evidence_id = totals_evidence_id
+)
+knitr::kable(final_readiness)
+stopifnot(final_readiness$ready)
+
+totals_result <- suppressMessages(run_dv_suite(
+  totals_after_producers,
+  totals_suite,
+  dvs = "F",
+  with_inputs = FALSE,
+  require_ready = TRUE,
+  evidence_file = totals_evidence_file,
+  evidence_id = totals_evidence_id
+))
+knitr::kable(attr(totals_result, "dv_suite_report"))
+knitr::kable(totals_result[, c("A", "B", "C", "D", "E", "F")])
+```
+
+Running `F` with `require_ready = TRUE` against the original input is expected
+to stop until `REQ-TOTAL-001` and `REQ-TOTAL-002` have succeeded. Set
+`trusted_inputs` only when pre-existing derived columns have been independently
+verified and are intentionally accepted as upstream results.

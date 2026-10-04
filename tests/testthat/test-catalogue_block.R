@@ -1,10 +1,12 @@
-make_sheet <- function(variable, label, derivation, first_row = 2L) {
+make_sheet <- function(variable, label, derivation, uids = rep(NA_character_, length(variable)),
+                       first_row = 2L) {
   # A stand-in for get_spec() output: columns positioned by Excel reference,
   # with the worksheet row each entry came from.
   sheet <- data.table::data.table(
     col_A = variable,
     col_B = label,
-    col_C = derivation
+    col_C = derivation,
+    col_D = uids
   )
 
   sheet[, excel_row := seq.int(
@@ -20,6 +22,7 @@ one_block <- data.table::data.table(
   derivation_col = 3L,
   variable_col = 1L,
   label_col = 2L,
+  uid_col = 4L,
   block = "Person"
 )
 
@@ -38,6 +41,20 @@ test_that("each derivation is catalogued against its variable", {
   expect_identical(result$excel_row, c(2L, 3L))
   expect_identical(result$block, c("Person", "Person"))
   expect_identical(result$block_column, c("C", "C"))
+})
+
+
+test_that("source requirement UIDs are preserved in the catalogue", {
+  sheet <- make_sheet(
+    variable = c("FirstDV", "SecondDV"),
+    label = c("First", "Second"),
+    derivation = c("FirstDV = a", "SecondDV = b"),
+    uids = c("REQ-001", "REQ-002")
+  )
+
+  result <- catalogue_block(sheet, one_block, "spec.xlsx", "Sheet1", "variable")
+
+  expect_identical(result$uid, c("REQ-001", "REQ-002"))
 })
 
 

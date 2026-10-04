@@ -165,6 +165,9 @@ expand_atomic_catalogue_rows <- function(catalogue) {
       out <- catalogue[index, , drop = FALSE]
       out$variable <- substitute_index(dv)
       out$instructions <- substitute_index(catalogue$instructions[[index]])
+      if ("uid" %in% names(out) && !is_blank(out$uid[[1L]])) {
+        out$uid <- paste0(out$uid, "_", paste(numbers, collapse = "_"))
+      }
       out$label <- if (is.null(catalogue$label[[index]]) || is.na(catalogue$label[[index]])) {
         catalogue$label[[index]]
       } else {
@@ -181,7 +184,21 @@ expand_atomic_catalogue_rows <- function(catalogue) {
   )
 
   if (nrow(atomic) > 0L) {
-    atomic[, uid := sprintf("dv_%06d", seq_len(nrow(atomic)))]
+    if (!"uid" %in% names(atomic)) {
+      atomic[, uid := NA_character_]
+    }
+
+    missing_uid <- is_blank(atomic$uid)
+    atomic[missing_uid, uid := sprintf("dv_%06d", .I)]
+
+    duplicate_uids <- unique(atomic$uid[duplicated(atomic$uid)])
+    if (length(duplicate_uids) > 0L) {
+      cli::cli_alert_danger(
+        "Requirement UIDs must be unique after range expansion: {.val {duplicate_uids}}."
+      )
+      stop("Requirement UIDs are not unique.", call. = FALSE)
+    }
+
     atomic <- atomic[, c("uid", setdiff(names(atomic), "uid")), with = FALSE]
   }
 
@@ -222,7 +239,7 @@ draft_plan_row <- function(text, dv, level, known_names, check_all_names) {
       ))
     }
 
-    if (check_all_names && any(unknown & !near_miss)) {
+    if (any(unknown & !near_miss)) {
       name_notes <- c(name_notes, paste0(
         "unknown variable ", resolution$name[unknown & !near_miss]
       ))

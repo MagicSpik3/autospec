@@ -23,6 +23,7 @@
 #' * `block_column` — Excel reference of the derivation column.
 #' * `derivation_col`, `variable_col`, `label_col` — column positions. The
 #'   label position is `NA` when the block has no `Label` column.
+#' * `uid_col` — optional position of a `Requirement UID` or `UID` column.
 #' * `value_labels_col`, `notes_col` — positions of the block's `Value Labels`
 #'   and `Notes` columns, found to the right of the derivation and before the
 #'   next block begins. `NA` when the block has no such column.
@@ -55,6 +56,7 @@ find_derivation_blocks <- function(header) {
         derivation_col = integer(),
         variable_col = integer(),
         label_col = integer(),
+        uid_col = integer(),
         value_labels_col = integer(),
         notes_col = integer()
       )
@@ -63,6 +65,7 @@ find_derivation_blocks <- function(header) {
 
   is_variable <- grepl("^variable( name)?$", labels)
   is_label <- labels == "label"
+  is_uid <- labels %in% c("uid", "requirement uid")
   is_value_labels <- grepl("^value labels?$", labels)
   is_notes <- grepl("^notes?$", labels)
 
@@ -116,6 +119,11 @@ find_derivation_blocks <- function(header) {
       derivation_col = derivation_cols,
       boundary = boundaries,
       MoreArgs = list(candidates = is_label)
+    )),
+    uid_col = as.integer(vapply(
+      derivation_cols,
+      FUN = function(col) nearest_right(is_uid, col),
+      FUN.VALUE = integer(1L)
     )),
     value_labels_col = as.integer(vapply(
       derivation_cols,

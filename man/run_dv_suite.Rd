@@ -11,7 +11,11 @@ run_dv_suite(
   dvs = NULL,
   with_inputs = TRUE,
   stop_on_error = FALSE,
-  report_file = NULL
+  report_file = NULL,
+  require_ready = FALSE,
+  trusted_inputs = character(),
+  evidence_file = NULL,
+  evidence_id = NULL
 )
 }
 \arguments{
@@ -30,10 +34,25 @@ that build any input not already in \code{df}.}
 \item{stop_on_error}{Whether to stop at the first failing step.}
 
 \item{report_file}{Optional CSV path for the report of every step.}
+
+\item{require_ready}{Whether selected DVs must have every suite-produced
+input already built and recorded in \code{dv_suite_report}.}
+
+\item{trusted_inputs}{Data columns explicitly trusted without suite run
+evidence when \code{require_ready = TRUE}.}
+
+\item{evidence_file}{Optional CSV ledger for readiness evidence across saved
+and reloaded data. Supply with \code{evidence_id}.}
+
+\item{evidence_id}{Caller-supplied ID for one immutable data snapshot. Use
+the same ID across stages and a new ID when the source snapshot changes.
+Evidence is additionally checked against the current step implementation
+and suite settings.}
 }
 \value{
 \code{df} with the DVs added. The report is attached as the attribute
-\code{"dv_suite_report"}.
+\code{"dv_suite_report"}; successful and failed UID outcomes are accumulated in
+\code{"dv_suite_evidence"} for staged readiness checks.
 }
 \description{
 Runs every step, or only the chosen topics and DVs, in dependency order.

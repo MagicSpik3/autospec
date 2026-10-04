@@ -35,6 +35,7 @@ build_all_verbs_demo <- function() {
   config <- fixture$config
   input <- fixture$data
 
+  catalogue <- suppressMessages(make_catalogue(config$spec_files))
   plan <- suppressMessages(update_dv_plan(config, data_names = names(input)))
   input_audit <- make_required_input_table(plan, data_names = names(input))
 
@@ -70,6 +71,7 @@ build_all_verbs_demo <- function() {
   ))
 
   list(
+    catalogue = catalogue,
     plan = plan,
     input_audit = input_audit,
     suite = suppressMessages(read_dv_suite(config$suite_folder)),
@@ -84,6 +86,17 @@ all_verbs_demo <- build_all_verbs_demo()
 
 test_that("the demo traces every verb and reports every required input", {
   expect_identical(sort(all_verbs_demo$plan$verb), sort(registered_verbs()))
+  expect_identical(all_verbs_demo$plan$uid, sprintf("REQ-HW-%03d", seq_len(14L)))
+
+  reordered_plan <- suppressMessages(build_dv_plan(
+    all_verbs_demo$catalogue[rev(seq_len(nrow(all_verbs_demo$catalogue))), ],
+    data_names = names(all_verbs_demo$input)
+  ))
+  by_output <- function(plan) {
+    plan$uid[match(sort(plan$dv), plan$dv)]
+  }
+  expect_identical(by_output(reordered_plan), by_output(all_verbs_demo$plan))
+
   expect_true(
     all(all_verbs_demo$input_audit$available),
     info = paste(all_verbs_demo$input_audit$variable[!all_verbs_demo$input_audit$available], collapse = ", ")

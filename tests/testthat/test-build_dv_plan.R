@@ -60,6 +60,27 @@ test_that("existing atomic UIDs are preserved when drafting the plan", {
 })
 
 
+test_that("a source UID expands deterministically for ranged outputs", {
+  catalogue <- make_catalogue_rows(
+    "MOyr(1-2)R9",
+    "IF amount > 0 THEN MOyr(1-2)R9 = amount"
+  )
+  catalogue$uid <- "REQ-MAIL-ORDER"
+
+  plan <- suppressMessages(build_dv_plan(catalogue))
+
+  expect_identical(plan$uid, c("REQ-MAIL-ORDER_1", "REQ-MAIL-ORDER_2"))
+})
+
+
+test_that("duplicate source UIDs are rejected", {
+  catalogue <- make_catalogue_rows(c("a", "b"), c("a = x", "b = y"))
+  catalogue$uid <- c("REQ-DUPLICATE", "REQ-DUPLICATE")
+
+  expect_error(suppressMessages(build_dv_plan(catalogue)), "UIDs are not unique")
+})
+
+
 test_that("arguments are written as readable R code", {
   expect_identical(
     format_plan_args(list(value_cols = c("a", "b"), threshold = 0.2, otherwise = NA)),

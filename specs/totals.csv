@@ -1,0 +1,4 @@
+Variable Name,Label,Derivation,Notes,Requirement UID,Extra,Extra
+F,D plus E,F = D + E,,REQ-TOTAL-003,,
+E,B plus C,E = B + C,,REQ-TOTAL-002,,
+D,A plus B,D = A + B,,REQ-TOTAL-001,,
