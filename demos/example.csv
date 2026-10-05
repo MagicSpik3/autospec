@@ -1,0 +1,5 @@
+﻿Variable Name In,Label ,Variable Name Out,Derivation
+DHPnumR9_i ,Imputed number of credit agreements,,
+DHPwhnY(1-2)R9_i,when agreement is expected to be repaid(Year),,
+DHPwhnM(1-2)R9_i,when agreement is expected to be repaid (month),HPyr(1-2)R9,"IF DHPnumR9_i > 0 AND DHPwhny(1-2)R9_i > 0 THEN 
+HPyr(1-2)R9 = DHPWhny(1-2)R9_i - YearR9"

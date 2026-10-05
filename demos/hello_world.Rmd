@@ -1,9 +1,44 @@
 ---
-title: "Autospec: Hello World"
-author: "Autospec demo"
+title: "Autospec: An automatic tool for coding survey derivations into the R language."
+author: "Mark London"
 date: "2026-10-04"
 output: html_document
 ---
+
+## Minimal management summary
+
+The following tiny example shows the same pattern that appears throughout the full
+suite: a source variable is labelled, a derived variable is defined, and the
+result is then audited for readiness and traceability.
+
+| Variable Name In | Label | Variable Name Out | Derivation |
+| --- | --- | --- | --- |
+| DHPnumR9_i | Imputed number of credit agreements |  |  |
+| DHPwhnY(1-2)R9_i | when agreement is expected to be repaid (Year) |  |  |
+| DHPwhnM(1-2)R9_i | when agreement is expected to be repaid (month) | HPyr(1-2)R9 | IF DHPnumR9_i > 0 AND DHPwhny(1-2)R9_i > 0 THEN HPyr(1-2)R9 = DHPWhny(1-2)R9_i - YearR9 |
+
+The generation step is the same logic captured in the plan and converted into a
+ready-to-run DV step.
+
+```r
+# generated derivation, simplified for management review
+if (DHPnumR9_i > 0 && DHPwhnY(1-2)R9_i > 0) {
+  HPyr(1-2)R9 <- DHPwhnY(1-2)R9_i - YearR9
+}
+```
+
+### Audit example for this small case
+
+| Variable | Found in source data | Produced by earlier DV | Available to run | Used by output |
+| --- | --- | --- | --- | --- |
+| DHPnumR9_i | Yes |  | Yes | HPyr(1-2)R9 |
+| DHPwhnY(1-2)R9_i | Yes |  | Yes | HPyr(1-2)R9 |
+| YearR9 | Yes |  | Yes | HPyr(1-2)R9 |
+| HPyr(1-2)R9 | No | This derivation | After the step runs | Final output |
+
+This is the minimal form of the audit: the source variables are checked, the
+producer requirement is traced, and the final output is only marked ready once
+all required inputs are available and the rule has run successfully.
 
 ## From spec to tested operations
 
