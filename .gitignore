@@ -3,3 +3,7 @@
 .RData
 .Ruserdata
 SPSS/*
+*.sav
+wealth*
+*.xlsx
+*.yaml

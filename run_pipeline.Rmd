@@ -26,8 +26,21 @@ them under `topics`; `show_topics(config)` lists them.
 ```{r config}
 config <- read_autospec_config("autospec_config.yaml")
 
-# The data's column names, read without loading the data
-data_names <- names(haven::read_sav(config$data_file, n_max = 0))
+# Read just the data column names, without fully loading the data.
+# Use the appropriate reader for the file type in config$data_file.
+file_ext <- tolower(tools::file_ext(config$data_file))
+
+if (file_ext %in% c("sav", "zsav")) {
+  data_names <- names(haven::read_sav(config$data_file, n_max = 0))
+} else if (file_ext %in% c("xls", "xlsx")) {
+  data_names <- names(readxl::read_excel(config$data_file, n_max = 0))
+} else if (file_ext == "rds") {
+  data_names <- names(readRDS(config$data_file))
+} else if (file_ext == "csv") {
+  data_names <- names(utils::read.csv(config$data_file, nrows = 0))
+} else {
+  stop("Unsupported data file type: ", config$data_file, call. = FALSE)
+}
 ```
 
 ## Where am I?
