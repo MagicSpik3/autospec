@@ -49,6 +49,23 @@ To work on some specs only, list them under `topics` in the config
 (`show_topics()` lists the names); the trial run, sync and build then do only
 those.
 
+### Starting from SPSS syntax
+
+For the small command subset described in
+[SPSS_vocabulary.md](test_SPSS/SPSS_vocabulary.md), `spss_to_spec()` can write
+a first-pass CSV spec directly:
+
+```r
+spec <- spss_to_spec("source.sps", output_path = "specs/source.csv")
+catalogue <- make_catalogue("specs/source.csv")
+plan <- build_dv_plan(catalogue, data_names = names(input_data))
+```
+
+Review the generated spec and plan as usual before writing or running a suite.
+The converter does not infer the variables between endpoints in a SPSS range
+such as `SELECT var_a TO var_b`; it records that range as a note because the
+dataset's variable order is needed to expand it.
+
 ## The DV suite
 
 `dv_suite/` holds one file per spec (`financial_wealth.R`, `income.R`, ...),

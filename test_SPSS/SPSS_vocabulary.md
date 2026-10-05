@@ -24,6 +24,7 @@ This document lists the SPSS words and command patterns that actually appear in 
 | Aggregation | MODE | Aggregate mode | `MODE = ADDVARIABLES` |
 | Aggregation | SUM | Aggregate function | `/var_c05 = SUM(var_c01)` |
 | Selection | SELECT IF | Keep only rows matching a condition | `SELECT IF ANY(var_c05,1,3,5,7,9,11,13,15).` |
+| Variable ranges | `SELECT var_a TO var_b` | SPSS variable-list range; variables between the endpoints depend on dataset order | This range is retained as a review note and is not expanded without the dataset's variable list |
 | Selection | TEMPORARY | Use temporary filtering for listing/checking | `TEMPORARY.` |
 | Listing | LIST | Print selected variables for review | `LIST var_b01 var_b02 var_b03 ...` |
 | Listing | LIST VAR | Print a specific set of variables | `LIST VAR var_b01 var_b02 var_a07 ...` |
@@ -44,3 +45,9 @@ The example is built from a small subset of SPSS syntax:
 - review commands: `FRE VAR`, `LIST`, `SELECT IF`, `TEMPORARY`, `EXE`, `FORMATS`
 
 This is enough to support a first-pass open-source parser for the project without needing the full SPSS vocabulary.
+
+The current converter is intentionally narrower than this vocabulary. Its CSV
+output can be passed to `make_catalogue()` for review and planning. A variable
+range such as `SELECT var_a TO var_b` is not expanded: the syntax alone does
+not say which variables occur between the endpoints, so the generated spec
+records a note rather than guessing.

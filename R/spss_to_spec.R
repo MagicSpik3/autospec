@@ -10,13 +10,15 @@
 #' ignores reporting and control statements such as `SORT`, `LIST`, and `TEMPORARY`.
 #'
 #' @param sps_path Path to the `.sps` file to convert.
-#' @param output_path Optional path to write the generated CSV.
+#' @param output_path Optional path to write a CSV spec that can be read by
+#'   [make_catalogue()]. Person and household derivations are written as
+#'   separate blocks; SPSS source locations and notes are retained in Notes.
 #' @param quiet Suppress progress messages.
 #'
 #' @returns A data frame with columns:
 #' \describe{
-#'   \item{file_name}{Original file name.}
-#'   \item{file_location}{Original file directory.}
+#'   \item{source_file}{Original file name.}
+#'   \item{source_location}{Original file directory.}
 #'   \item{level}{`person` or `household`.}
 #'   \item{variable}{Output variable name.}
 #'   \item{label}{Short human-readable label from nearby comments.}
@@ -28,8 +30,11 @@
 #'
 #' @examples
 #' \dontrun{
-#'  spec <- spss_to_spec("test_SPSS/2_example.sps")
-#'  write.csv(spec, "test_SPSS/2_example_spec.csv", row.names = FALSE)
+#'  spec <- spss_to_spec(
+#'    "test_SPSS/2_example.sps",
+#'    output_path = "specs/2_example.csv"
+#'  )
+#'  catalogue <- make_catalogue("specs/2_example.csv")
 #' }
 #' @export
 spss_to_spec <- function(sps_path, output_path = NULL, quiet = FALSE) {
@@ -79,7 +84,15 @@ spss_to_spec <- function(sps_path, output_path = NULL, quiet = FALSE) {
   ), drop = FALSE]
 
   if (!is.null(output_path)) {
-    utils::write.csv(rows, output_path, row.names = FALSE)
+    utils::write.table(
+      spss_spec_csv(rows),
+      output_path,
+      sep = ",",
+      quote = TRUE,
+      row.names = FALSE,
+      col.names = FALSE,
+      na = ""
+    )
   }
 
   if (!quiet) {
@@ -111,6 +124,28 @@ parse_spss_lines <- function(lines) {
       }
       i <- i + 1L
       next
+    }
+
+    variable_range <- regmatches(
+      trimmed,
+      regexec(
+        "^SELECT(?:\\s+IF)?\\s+([A-Za-z0-9_.]+)\\s+TO\\s+([A-Za-z0-9_.]+)\\b",
+        trimmed,
+        ignore.case = TRUE,
+        perl = TRUE
+      )
+    )[[1L]]
+    if (length(variable_range) >= 3L) {
+      pending_notes <- c(
+        pending_notes,
+        paste0(
+          "Unexpanded SPSS variable range ",
+          variable_range[[2L]],
+          " TO ",
+          variable_range[[3L]],
+          ": dataset variable order is required to identify the intervening variables"
+        )
+      )
     }
 
     command <- detect_spss_command(line)
@@ -173,6 +208,69 @@ parse_spss_lines <- function(lines) {
   }
   if ("spss.command" %in% names(out)) {
     names(out)[names(out) == "spss.command"] <- "spss command"
+  }
+
+  out
+}
+
+spss_spec_csv <- function(rows) {
+  person <- rows[rows$level == "person", , drop = FALSE]
+  household <- rows[rows$level == "household", , drop = FALSE]
+  two_blocks <- nrow(person) > 0L && nrow(household) > 0L
+  has_person <- nrow(person) > 0L || nrow(household) == 0L
+  row_count <- max(nrow(person), nrow(household))
+  column_count <- if (two_blocks) 8L else 7L
+
+  out <- as.data.frame(
+    matrix("", nrow = row_count + 2L, ncol = column_count),
+    stringsAsFactors = FALSE
+  )
+  block_headers <- c("Variable Name", "Label", "Derivation", "Notes")
+  names(out) <- if (two_blocks) {
+    c(block_headers, block_headers)
+  } else {
+    c(block_headers, rep("", 3L))
+  }
+
+  out[1L, 1L] <- if (has_person) "Person" else "Household"
+  if (two_blocks) {
+    out[1L, 5L] <- "Household"
+  }
+  out[2L, ] <- names(out)
+
+  fill_block <- function(block, columns) {
+    if (nrow(block) == 0L) {
+      return(invisible(NULL))
+    }
+
+    row_numbers <- seq_len(nrow(block)) + 2L
+    block_notes <- vapply(seq_len(nrow(block)), function(index) {
+      note <- block$notes[[index]]
+      if (is.na(note)) note <- ""
+      provenance <- paste0(
+        "SPSS ", block$`spss command`[[index]],
+        " at line(s) ", block$`spss line number(s)`[[index]]
+      )
+      paste(c(note[nzchar(note)], provenance), collapse = "; ")
+    }, character(1L))
+
+    out[row_numbers, columns] <<- data.frame(
+      variable = block$variable,
+      label = block$label,
+      derivation = block$derivation,
+      notes = block_notes,
+      stringsAsFactors = FALSE
+    )
+    invisible(NULL)
+  }
+
+  if (two_blocks) {
+    fill_block(person, 1L:4L)
+    fill_block(household, 5L:8L)
+  } else if (nrow(person) > 0L) {
+    fill_block(person, 1L:4L)
+  } else if (nrow(household) > 0L) {
+    fill_block(household, 1L:4L)
   }
 
   out
