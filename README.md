@@ -53,13 +53,39 @@ those.
 
 For the small command subset described in
 [SPSS_vocabulary.md](test_SPSS/SPSS_vocabulary.md), `spss_to_spec()` can write
-a first-pass CSV spec directly:
+a first-pass CSV spec directly. The short
+[management example](test_SPSS/management_demo.sps) uses an explicit
+`Requirement UID` comment and a `DO IF RANGE` block:
+
+See the rendered walkthrough in
+[demos/spss_to_spec.Rmd](demos/spss_to_spec.Rmd); render it from the repository
+root with `rmarkdown::render("demos/spss_to_spec.Rmd")`.
 
 ```r
-spec <- spss_to_spec("source.sps", output_path = "specs/source.csv")
-catalogue <- make_catalogue("specs/source.csv")
-plan <- build_dv_plan(catalogue, data_names = names(input_data))
+devtools::load_all()
+spec_path <- tempfile(fileext = ".csv")
+spss_to_spec("test_SPSS/management_demo.sps", output_path = spec_path)
+
+catalogue <- make_catalogue(spec_path)
+input <- data.frame(var_b04 = c(0, 15, 16, NA_real_))
+plan <- build_dv_plan(catalogue, data_names = names(input))
+plan[, c("uid", "dv", "verb", "inputs", "notes")]
+
+# Review the drafted condition and plan before signing it off.
+plan$status <- "reviewed"
+plan$reviewed_by <- "Management demo"
+plan$reviewed_on <- as.character(Sys.Date())
+
+suite_dir <- tempfile("spss_demo_suite")
+write_dv_suite(plan, suite_dir, data_names = names(input), name_case = "lower")
+result <- run_dv_suite(input, suite_dir, stop_on_error = TRUE)
+result$var_a02
+attr(result, "dv_suite_report")[, c("uid", "dv", "outcome")]
 ```
+
+The SPSS comment's UID and the exact SPSS source lines are carried into the
+spec, plan, generated function and run report. The runnable trace is covered
+by `Rscript -e 'devtools::test(filter = "spss_to_spec")'`.
 
 Review the generated spec and plan as usual before writing or running a suite.
 The converter does not infer the variables between endpoints in a SPSS range

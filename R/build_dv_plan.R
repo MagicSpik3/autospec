@@ -81,6 +81,17 @@ build_dv_plan <- function(data_catalogue, data_names = NULL, previous_plan = NUL
     )
   })
 
+  plan_notes <- vapply(seq_along(drafts), function(index) {
+    source_notes <- if ("notes" %in% names(atomic_catalogue)) {
+      atomic_catalogue$notes[[index]]
+    } else {
+      NA_character_
+    }
+    notes <- unique(c(drafts[[index]]$notes, source_notes))
+    notes <- notes[!is.na(notes) & nzchar(trimws(notes))]
+    if (length(notes) == 0L) NA_character_ else paste(notes, collapse = "; ")
+  }, character(1L))
+
   plan <- data.table::data.table(
     uid = atomic_catalogue$uid,
     dv = clean_dv_name(atomic_catalogue$variable),
@@ -93,7 +104,7 @@ build_dv_plan <- function(data_catalogue, data_names = NULL, previous_plan = NUL
     status = vapply(drafts, `[[`, character(1L), "status"),
     reviewed_by = NA_character_,
     reviewed_on = NA_character_,
-    notes = vapply(drafts, `[[`, character(1L), "notes"),
+    notes = plan_notes,
     file_name = atomic_catalogue$file_name,
     sheet_name = atomic_catalogue$sheet_name,
     excel_row = as.integer(atomic_catalogue$excel_row),

@@ -8,6 +8,10 @@
 #' The converter is deliberately conservative: it focuses on commands that
 #' create or transform variables (`COMPUTE`, `RECODE`, `DO IF`, `AGGREGATE`) and
 #' ignores reporting and control statements such as `SORT`, `LIST`, and `TEMPORARY`.
+#' A simple `DO IF RANGE(x, low, high)` with two `COMPUTE` branches assigning
+#' 1 and 0 is converted to a flag derivation. A nearby `Requirement UID`
+#' comment is retained; generated spec notes identify the source file and
+#' SPSS line numbers for review.
 #'
 #' @param sps_path Path to the `.sps` file to convert.
 #' @param output_path Optional path to write a CSV spec that can be read by
@@ -51,6 +55,7 @@ spss_to_spec <- function(sps_path, output_path = NULL, quiet = FALSE) {
       source_location = normalizePath(dirname(sps_path), winslash = "/"),
       level = character(),
       variable = character(),
+      uid = character(),
       label = character(),
       derivation = character(),
       notes = character(),
@@ -76,6 +81,7 @@ spss_to_spec <- function(sps_path, output_path = NULL, quiet = FALSE) {
     "source_location",
     "level",
     "variable",
+    "uid",
     "label",
     "derivation",
     "notes",
@@ -172,6 +178,7 @@ parse_spss_lines <- function(lines) {
     out <- data.frame(
       level = character(),
       variable = character(),
+      uid = character(),
       label = character(),
       derivation = character(),
       notes = character(),
@@ -193,6 +200,7 @@ parse_spss_lines <- function(lines) {
     data.frame(
       level = row[["level"]],
       variable = row[["variable"]],
+      uid = row[["uid"]],
       label = row[["label"]],
       derivation = row[["derivation"]],
       notes = row[["notes"]],
@@ -219,17 +227,17 @@ spss_spec_csv <- function(rows) {
   two_blocks <- nrow(person) > 0L && nrow(household) > 0L
   has_person <- nrow(person) > 0L || nrow(household) == 0L
   row_count <- max(nrow(person), nrow(household))
-  column_count <- if (two_blocks) 8L else 7L
+  column_count <- if (two_blocks) 10L else 7L
 
   out <- as.data.frame(
     matrix("", nrow = row_count + 2L, ncol = column_count),
     stringsAsFactors = FALSE
   )
-  block_headers <- c("Variable Name", "Label", "Derivation", "Notes")
+  block_headers <- c("Variable Name", "Label", "Derivation", "Notes", "Requirement UID")
   names(out) <- if (two_blocks) {
     c(block_headers, block_headers)
   } else {
-    c(block_headers, rep("", 3L))
+    c(block_headers, rep("", 2L))
   }
 
   out[1L, 1L] <- if (has_person) "Person" else "Household"
@@ -248,8 +256,9 @@ spss_spec_csv <- function(rows) {
       note <- block$notes[[index]]
       if (is.na(note)) note <- ""
       provenance <- paste0(
-        "SPSS ", block$`spss command`[[index]],
-        " at line(s) ", block$`spss line number(s)`[[index]]
+        "SPSS ", block$source_file[[index]], " lines ",
+        block$`spss line number(s)`[[index]], " (",
+        block$`spss command`[[index]], ")"
       )
       paste(c(note[nzchar(note)], provenance), collapse = "; ")
     }, character(1L))
@@ -259,18 +268,19 @@ spss_spec_csv <- function(rows) {
       label = block$label,
       derivation = block$derivation,
       notes = block_notes,
+      uid = block$uid,
       stringsAsFactors = FALSE
     )
     invisible(NULL)
   }
 
   if (two_blocks) {
-    fill_block(person, 1L:4L)
-    fill_block(household, 5L:8L)
+    fill_block(person, 1L:5L)
+    fill_block(household, 6L:10L)
   } else if (nrow(person) > 0L) {
-    fill_block(person, 1L:4L)
+    fill_block(person, 1L:5L)
   } else if (nrow(household) > 0L) {
-    fill_block(household, 1L:4L)
+    fill_block(household, 1L:5L)
   }
 
   out
@@ -416,6 +426,20 @@ parse_command_block <- function(command, block_lines, comments, line_numbers) {
 
   if (identical(command, "do_if")) {
     text <- paste(block_lines, collapse = " ")
+
+    simple_flag <- parse_simple_range_flag(block_lines)
+    if (!is.null(simple_flag)) {
+      out[[length(out) + 1L]] <- row_template(
+        variable = simple_flag$variable,
+        derivation = simple_flag$derivation,
+        notes = comments,
+        command = "DO IF",
+        level = determine_level(simple_flag$variable, text),
+        line_number = paste(line_numbers, collapse = ", ")
+      )
+      return(out)
+    }
+
     assigned <- unique(unlist(regmatches(text, gregexpr("COMPUTE\\s+([A-Za-z0-9_.]+)", text, perl = TRUE))))
     variable_names <- sub(".*COMPUTE\\s+([A-Za-z0-9_.]+).*", "\\1", assigned, perl = TRUE)
     variable_names <- variable_names[nzchar(variable_names)]
@@ -439,16 +463,103 @@ parse_command_block <- function(command, block_lines, comments, line_numbers) {
 }
 
 row_template <- function(variable, derivation, notes, command, level, line_number) {
+  uid <- extract_spss_uid(notes)
+  notes <- notes[!grepl("^(?:Requirement\\s+)?UID\\s*[:=]", notes, ignore.case = TRUE, perl = TRUE)]
   label <- make_label(variable, notes)
   list(
     level = level,
     variable = variable,
+    uid = uid,
     label = label,
     derivation = derivation,
     notes = paste(unique(notes), collapse = "; "),
     "spss line number(s)" = line_number,
     "spss command" = command
   )
+}
+
+parse_simple_range_flag <- function(block_lines) {
+  opening <- regmatches(
+    block_lines[[1L]],
+    regexec(
+      "^\\s*DO\\s+IF\\s+RANGE\\s*\\(\\s*([A-Za-z0-9_.]+)\\s*,\\s*(-?[0-9]+(?:\\.[0-9]+)?)\\s*,\\s*(-?[0-9]+(?:\\.[0-9]+)?)\\s*\\)\\s*\\.?\\s*$",
+      block_lines[[1L]],
+      ignore.case = TRUE,
+      perl = TRUE
+    )
+  )[[1L]]
+
+  if (length(opening) < 4L) {
+    return(NULL)
+  }
+
+  else_line <- which(grepl("^\\s*ELSE\\s*\\.?\\s*$", block_lines, ignore.case = TRUE, perl = TRUE))
+  end_line <- which(grepl("^\\s*END\\s+IF\\s*\\.?\\s*$", block_lines, ignore.case = TRUE, perl = TRUE))
+  compute_lines <- grep("^\\s*COMPUTE\\b", block_lines, ignore.case = TRUE, perl = TRUE)
+
+  if (length(else_line) != 1L || length(end_line) != 1L ||
+      length(compute_lines) != 2L ||
+      !(compute_lines[[1L]] < else_line && else_line < compute_lines[[2L]] &&
+        compute_lines[[2L]] < end_line)) {
+    return(NULL)
+  }
+
+  assignments <- lapply(compute_lines, function(line_number) {
+    matched <- regmatches(
+      block_lines[[line_number]],
+      regexec(
+        "^\\s*COMPUTE\\s+([A-Za-z0-9_.]+)\\s*=\\s*(-?[0-9]+(?:\\.[0-9]+)?)\\s*\\.?\\s*$",
+        block_lines[[line_number]],
+        ignore.case = TRUE,
+        perl = TRUE
+      )
+    )[[1L]]
+    if (length(matched) < 3L) NULL else matched
+  })
+
+  if (any(vapply(assignments, is.null, logical(1L))) ||
+      !identical(tolower(assignments[[1L]][[2L]]), tolower(assignments[[2L]][[2L]])) ||
+      !identical(as.numeric(assignments[[1L]][[3L]]), 1) ||
+      !identical(as.numeric(assignments[[2L]][[3L]]), 0)) {
+    return(NULL)
+  }
+
+  list(
+    variable = assignments[[1L]][[2L]],
+    derivation = paste0(
+      "IF ", opening[[2L]], " >= ", opening[[3L]], " AND ",
+      opening[[2L]], " <= ", opening[[4L]],
+      " THEN ", assignments[[1L]][[2L]], " = 1 ELSE ",
+      assignments[[2L]][[2L]], " = 0"
+    )
+  )
+}
+
+extract_spss_uid <- function(notes) {
+  uid_lines <- grep(
+    "^(?:Requirement\\s+)?UID\\s*[:=]",
+    notes,
+    value = TRUE,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+  if (length(uid_lines) == 0L) {
+    return(NA_character_)
+  }
+
+  matched <- regmatches(
+    uid_lines[[1L]],
+    regexec(
+      "^(?:Requirement\\s+)?UID\\s*[:=]\\s*([A-Za-z0-9_.-]+)\\s*$",
+      uid_lines[[1L]],
+      ignore.case = TRUE,
+      perl = TRUE
+    )
+  )[[1L]]
+  if (length(matched) < 2L) {
+    stop("Invalid SPSS requirement UID comment: ", uid_lines[[1L]], call. = FALSE)
+  }
+  matched[[2L]]
 }
 
 make_label <- function(variable, notes) {

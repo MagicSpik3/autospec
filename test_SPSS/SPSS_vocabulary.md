@@ -51,3 +51,9 @@ output can be passed to `make_catalogue()` for review and planning. A variable
 range such as `SELECT var_a TO var_b` is not expanded: the syntax alone does
 not say which variables occur between the endpoints, so the generated spec
 records a note rather than guessing.
+
+The management demo also supports the simple form `DO IF RANGE(x, low, high)`
+with one `COMPUTE output = 1`, an `ELSE` branch assigning `0`, and `END IF`.
+Put a stable `* Requirement UID: ...` comment immediately above that block.
+The converter keeps that UID and records the source file and executable line
+numbers in the generated spec.

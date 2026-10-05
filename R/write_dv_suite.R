@@ -522,7 +522,7 @@ step_lines <- function(dv, row, label, inputs, call_lines, written, reason, in_d
     }
   }
 
-  if (!is_blank(row$notes) && !(row$status %in% "reviewed")) {
+  if (!is_blank(row$notes)) {
     comment_lines <- c(comment_lines, paste0("# Plan notes: ", row$notes))
   }
 

@@ -47,8 +47,6 @@ export(update_dv_plan)
 export(write_dv_plan)
 export(write_dv_suite)
 import(data.table)
-importFrom(readxl,
-  excel_sheets,
-  read_excel
-)
+importFrom(readxl,excel_sheets)
+importFrom(readxl,read_excel)
 importFrom(utils,adist)

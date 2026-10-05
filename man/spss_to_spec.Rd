@@ -39,6 +39,10 @@ metadata, and the SPSS line numbers that generated the row.
 The converter is deliberately conservative: it focuses on commands that
 create or transform variables (\code{COMPUTE}, \code{RECODE}, \verb{DO IF}, \code{AGGREGATE}) and
 ignores reporting and control statements such as \code{SORT}, \code{LIST}, and \code{TEMPORARY}.
+A simple \verb{DO IF RANGE(x, low, high)} with two \code{COMPUTE} branches assigning
+1 and 0 is converted to a flag derivation. A nearby \verb{Requirement UID}
+comment is retained; generated spec notes identify the source file and
+SPSS line numbers for review.
 }
 \examples{
 \dontrun{

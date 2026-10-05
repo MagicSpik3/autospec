@@ -70,3 +70,47 @@ test_that("SPSS can flow through a catalogue, reviewed plan, R suite and result 
   expect_equal(result$net_value, c(17, 0, -2), ignore_attr = TRUE)
   expect_true(all(attr(result, "dv_suite_report")$outcome == "built"))
 })
+
+
+test_that("management demo preserves its SPSS UID and line audit trail", {
+  root <- normalizePath(file.path(testthat::test_path("..", ".."), fsep = "/"), winslash = "/")
+  sps_path <- file.path(root, "test_SPSS", "management_demo.sps")
+  spec_path <- tempfile(fileext = ".csv")
+  suite_dir <- tempfile("spss_management_demo")
+  input <- data.frame(var_b04 = c(0, 15, 16, NA_real_))
+
+  source_rows <- spss_to_spec(sps_path, output_path = spec_path, quiet = TRUE)
+  expect_identical(source_rows$uid, "SPSS-DEMO-001")
+  expect_identical(source_rows$`spss line number(s)`, "3, 4, 5, 6, 7")
+  expect_identical(
+    source_rows$derivation,
+    "IF var_b04 >= 0 AND var_b04 <= 15 THEN var_a02 = 1 ELSE var_a02 = 0"
+  )
+
+  catalogue <- suppressMessages(make_catalogue(
+    spec_path, exclude_sheets = character(), quiet = TRUE
+  ))
+  expect_identical(catalogue$uid, "SPSS-DEMO-001")
+  expect_identical(catalogue$variable, "var_a02")
+
+  plan <- suppressMessages(build_dv_plan(catalogue, data_names = names(input)))
+  expect_identical(plan$uid, "SPSS-DEMO-001")
+  expect_identical(plan$verb, "dv_flag_if")
+  expect_match(plan$notes, "management_demo.sps lines 3, 4, 5, 6, 7")
+
+  plan$status <- "reviewed"
+  plan$reviewed_by <- "testthat"
+  plan$reviewed_on <- "2026-10-05"
+  suppressMessages(write_dv_suite(
+    plan, suite_dir, data_names = names(input), name_case = "lower"
+  ))
+  suite_files <- list.files(suite_dir, pattern = "[.]R$", full.names = TRUE)
+  suite_lines <- unlist(lapply(suite_files, readLines), use.names = FALSE)
+  expect_true(any(grepl("uid = \"SPSS-DEMO-001\"", suite_lines, fixed = TRUE)))
+  expect_true(any(grepl("dv_flag_if(", suite_lines, fixed = TRUE)))
+  expect_true(any(grepl("management_demo.sps lines 3, 4, 5, 6, 7", suite_lines, fixed = TRUE)))
+
+  result <- suppressMessages(run_dv_suite(input, suite_dir, stop_on_error = TRUE))
+  expect_equal(result$var_a02, c(1, 1, 0, NA_real_), ignore_attr = TRUE)
+  expect_identical(attr(result, "dv_suite_report")$uid, "SPSS-DEMO-001")
+})

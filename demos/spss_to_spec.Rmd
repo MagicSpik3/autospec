@@ -1,0 +1,163 @@
+---
+title: "From commented SPSS to an audited R function"
+author: "autospec"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+find_project_root <- function(path = getwd()) {
+  path <- normalizePath(path, winslash = "/")
+
+  repeat {
+    if (file.exists(file.path(path, "autospec.Rproj"))) return(path)
+    parent <- dirname(path)
+    if (identical(parent, path)) {
+      stop("Cannot find autospec.Rproj.", call. = FALSE)
+    }
+    path <- parent
+  }
+}
+
+repo_root <- find_project_root()
+knitr::opts_knit$set(root.dir = repo_root)
+devtools::load_all(repo_root, quiet = TRUE)
+demo_dir <- tempfile("autospec_spss_demo")
+dir.create(demo_dir)
+```
+
+## The management example
+
+This short example follows one requirement from its SPSS comment through the
+generated specification, reviewed plan and R function, then checks its output.
+The UID is authored once in SPSS and follows the requirement through the run
+report. The SPSS source lines are retained in the spec and function comments.
+
+The source is [management_demo.sps](../test_SPSS/management_demo.sps):
+
+```{r show-spss, echo=FALSE}
+spss_lines <- readLines(
+  file.path(repo_root, "test_SPSS", "management_demo.sps"),
+  warn = FALSE
+)
+cat(paste(sprintf("%2d  %s", seq_along(spss_lines), spss_lines), collapse = "\n"))
+```
+
+## Create the spec from SPSS
+
+Render this demo from the repository root with:
+
+```r
+rmarkdown::render("demos/spss_to_spec.Rmd")
+```
+
+The converter writes a CSV spec. We pass that file into the same catalogue and
+plan workflow used for hand-written specs.
+
+```{r create-spec}
+spss_path <- file.path(repo_root, "test_SPSS", "management_demo.sps")
+spec_path <- file.path(demo_dir, "management_demo.csv")
+spec_rows <- spss_to_spec(spss_path, output_path = spec_path, quiet = TRUE)
+
+knitr::kable(
+  spec_rows[, c(
+    "uid", "variable", "derivation", "notes",
+    "spss line number(s)", "spss command"
+  )],
+  col.names = c("Requirement UID", "Output", "Derivation", "Source and notes",
+                "SPSS lines", "Command")
+)
+```
+
+## Draft and review the plan
+
+This requirement is a simple flag. The planner matches it to `dv_flag_if`.
+Here the data and sign-off are deliberately small and local to the demo.
+
+```{r plan}
+input <- data.frame(var_b04 = c(0, 15, 16, NA_real_))
+catalogue <- make_catalogue(spec_path, exclude_sheets = character(), quiet = TRUE)
+plan <- suppressMessages(build_dv_plan(catalogue, data_names = names(input)))
+
+knitr::kable(
+  plan[, c("uid", "dv", "verb", "inputs", "status", "notes")],
+  col.names = c("Requirement UID", "Output", "R operation", "Inputs",
+                "Draft status", "Audit trail")
+)
+
+# Demo-only sign-off: in a real workflow, review and approve the plan first.
+plan$status <- "reviewed"
+plan$reviewed_by <- "Demo reviewer"
+plan$reviewed_on <- as.character(Sys.Date())
+```
+
+## Generate and run the R function
+
+```{r build-and-run}
+suite_dir <- file.path(demo_dir, "dv_suite")
+suppressMessages(write_dv_suite(
+  plan,
+  suite_dir,
+  data_names = names(input),
+  name_case = "lower"
+))
+
+topic_file <- list.files(suite_dir, pattern = "[.]R$", full.names = TRUE)
+topic_file <- topic_file[basename(topic_file) != "settings.R"]
+stopifnot(length(topic_file) == 1L)
+generated_function <- readLines(topic_file, warn = FALSE)
+cat(paste(generated_function, collapse = "\n"))
+
+result <- suppressMessages(run_dv_suite(input, suite_dir, stop_on_error = TRUE))
+stopifnot(isTRUE(all.equal(
+  result$var_a02, c(1, 1, 0, NA_real_), check.attributes = FALSE
+)))
+```
+
+The condition is inclusive: ages 0 and 15 receive 1; age 16 receives 0;
+missing age remains missing.
+
+## UID and audit check
+
+The same UID can be checked at the plan, generated step and run-report stages.
+The automated test also checks the result and the SPSS line trail:
+
+```{r audit}
+run_report <- attr(result, "dv_suite_report")
+suite <- suppressMessages(read_dv_suite(suite_dir))
+audit <- data.frame(
+  requirement_uid = plan$uid,
+  output = plan$dv,
+  operation = plan$verb,
+  suite_uid = vapply(plan$dv, function(dv) suite$steps[[dv]]$uid, character(1L)),
+  run_uid = run_report$uid,
+  outcome = run_report$outcome,
+  source_lines = spec_rows$`spss line number(s)`,
+  stringsAsFactors = FALSE
+)
+
+stopifnot(
+  identical(audit$requirement_uid, audit$suite_uid),
+  identical(audit$requirement_uid, audit$run_uid),
+  all(audit$outcome == "built")
+)
+knitr::kable(audit)
+```
+
+Run the executable round-trip test from the repository root:
+
+```sh
+Rscript -e 'devtools::test(filter = "spss_to_spec")'
+```
+
+This demo covers only the simple `DO IF RANGE` / `COMPUTE` / `ELSE` pattern.
+It does not attempt to implement the full SPSS language. In particular,
+`SELECT var_a TO var_b` depends on variable order in the SPSS dataset, so the
+converter records it for review instead of guessing the intervening variables.
+
+```{r cleanup, include=FALSE}
+unlink(demo_dir, recursive = TRUE)
+```
