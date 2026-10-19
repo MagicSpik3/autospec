@@ -84,8 +84,8 @@ test_that("only the chosen topics are shown", {
 test_that("tracking values that break the chain send you to the plan first", {
   config <- fake_config()
   plan <- fake_plan_row("copy_a", "dv_copy", args = "source_col = \"a\"")
-  plan$`DV Written` <- "no"
-  plan$`Unit Test Stub` <- "yes"
+  plan$`Unit Test Stub` <- "no"
+  plan$`Unit Test Populated` <- "yes"
   suppressMessages(write_dv_plan(plan, config$plan_file))
 
   status <- suppressMessages(autospec_status(config))

@@ -79,17 +79,24 @@ people's sign-offs or hand-written code are backed up before any change.
 
 A DV moves through these states. The plan's tracking columns record them.
 
-| Column | Yes means | Requires |
+| Column | Yes means | Needs |
 | --- | --- | --- |
-| `DV Written` | The DV function has a body, not only a stub. | Signed-off plan row. |
-| `Unit Test Stub` | A unit-test skeleton exists for the DV. | `DV Written` |
-| `Unit Test Populated` | The unit test has real `given` and `expected` values. | `Unit Test Stub` |
-| `Unit Test Passed` | The unit test has been run and passed. | `Unit Test Populated` |
+| `DV Written` | The suite step has a function body (`derive` is not `NULL`). | Nothing. |
+| `Unit Test Stub` | A test for the DV exists in the suite's `tests/` folder. | Nothing. `write_dv_suite()` writes the stub before the DV is written. |
+| `Unit Test Populated` | That test's `skip()` line has been removed. | `Unit Test Stub` |
+| `Unit Test Passed` | The test ran without a failure or an error. | `Unit Test Populated` and `DV Written` |
 
-Blank means not yet. Values are `yes`, `no` or blank, in any case. Each step needs
-the step before it (`tracking_problems()`).
+Values are `yes`, `no` or blank, in any case. Blank means not yet. The rules are
+in `tracking_needs()` and checked by `tracking_problems()`.
 
-Open question: the tracking values are set by hand today. See section 7.
+**Where the values come from.** `update_dv_tracking(config)` reads the suite
+(`suite_tracking()`), runs its tests (`unit_test_results()`), and records both in
+the plan (`record_tracking()`), backing up the old plan first. Values typed by
+hand are replaced. Plan rows with no suite step are left blank.
+
+**How a test is tied to its DV.** By the test name: `Requirement UID <uid>: ...`
+first, then `<dv> follows the spec`. These are the names `write_dv_suite()` writes.
+A test with any other name belongs to no DV.
 
 ## 5. Modules and their layers
 
@@ -101,9 +108,9 @@ files.
 | Parsing | `get_spec`, `make_catalogue`, `parse_derivation`, `tokenise_derivation`, `match_verb`, `derivation_tree`, `find_derivation_blocks` | Turn spec text into structured derivations. |
 | Verbs | `dv_*.R`, `verb_library`, `verb_checks` | The fixed set of DV operations, each a pure function over a data frame. |
 | Code generation | `plain_code`, `spss_code`, `write_dv_suite` | Turn a plan row into R code, with SPSS shown as comments. |
-| Plan | `build_dv_plan`, `update_dv_plan`, `dv_tracking` | Draft the plan, keep sign-offs, check tracking values. |
-| Suite | `sync_dv_suite`, `dv_suite`, `check_dv_suite`, `trial_run`, `name_case`, `resolve_names` | Write, check, and run the suite; keep the evidence ledger. |
-| Export | `export_dv_scripts` | Build the delivered project from the suite. |
+| Plan | `build_dv_plan`, `update_dv_plan`, `dv_tracking`, `update_dv_tracking` | Draft the plan, keep sign-offs, check tracking values, and record them from the suite. |
+| Suite | `sync_dv_suite`, `dv_suite`, `check_dv_suite`, `trial_run`, `name_case`, `resolve_names`, `suite_tracking` | Write, check, and run the suite; keep the evidence ledger; read each DV's state and test results. |
+| Export | `export_dv_scripts`, `export_selection` | Choose what to deliver and build the delivered project from the suite. |
 | Status and UI | `autospec_status`, `addins`, `autospec_config`, `setup_autospec` | Reports and entry points. Read-only except for explicit actions. |
 
 Config (`autospec_config.yaml`) is read once by `read_autospec_config()` and passed
@@ -115,45 +122,51 @@ down as an object. Modules do not read the file themselves.
 
 `export_dv_scripts()` checks the suite, runs its example tests, builds the scripts
 on the data, and compares each DV with the suite on that data. Any mismatch stops
-the export. It writes every step that has a function body. Steps without one are
-listed in the README as not yet written.
+the export. `select_export_steps()` decides what is exported.
 
-It does **not**:
-- filter on `Unit Test Passed` or any other tracking value;
-- ship each DV's unit tests as part of the delivered project;
-- offer a way to deliver only the finished DVs.
+- **Default:** every step with a function body is exported, as before.
+- **`finished_only = TRUE`** (needs `plan`): only finished DVs are exported. A DV
+  is finished when its plan row has `DV Written`, `Unit Test Stub`, `Unit Test
+  Populated` and `Unit Test Passed` all `yes` (`finished_dvs()`).
+  - A finished DV that reads a DV left out is left out too, since delivering it
+    alone would break.
+  - Check errors and failing tests of DVs left out do not stop the export.
+    Suite-wide errors, such as in `settings.R`, still do.
+  - With no finished DVs, it stops and writes nothing.
+- **Manifest:** every export writes `left_out.csv` (`dv`, `uid`, `reason`). The
+  reason is the first gap found, in the order the work is done: not written; not
+  in the plan; no unit test; unit test not populated; unit test not passed; needs
+  a DV that is left out; an input is missing from the data.
 
-### Target
+The README still lists only the DVs not written. `left_out.csv` is the full list.
 
-The delivery workflow needs to deliver finished DVs while the rest are still being
-debugged.
+### Still to do
 
-- **Definition of finished:** a DV is finished when `DV Written`, `Unit Test
-  Populated` and `Unit Test Passed` are all `yes`, and it matches the suite on the
-  data.
-- **Option:** `export_dv_scripts(..., finished_only = TRUE)` exports only finished
-  DVs. The default is to export everything written, as now.
-- **Manifest:** every export writes a list of the DVs it left out and why, so the
-  customer can see what is missing.
 - **Unit tests in the project:** each exported DV carries its unit test in the
-  delivered project, so the customer can rerun it.
+  delivered project, so the customer can rerun it (stage 6).
 - **Rerunnable:** exporting again with the same plan gives the same output.
 
-## 7. Open decisions
+## 7. Decisions
 
-These need your decision before the next build stage.
+### Taken (2026-10-19)
 
-1. **Meaning of `DV Written`.** Is it "function body written", as the table in 4.1
-   says, or "written and matches the suite"? The second is stricter.
-2. **Source of tracking values.** Today they are typed in the plan. Should the
-   suite and test runs set `Unit Test Stub`, `Unit Test Populated` and `Unit Test
-   Passed` automatically, with the plan as a record of those results?
-3. **One audit or two.** The plan and the evidence ledger both record outcomes.
-   Choose one as the source of truth, or define what each one records.
-4. **Finished-only definition.** Should "finished" also require the DV's check
-   against the suite on the data, as the definition in section 6 does?
-5. **Unit test runner.** Are the per-DV tests run with `testthat` in the scripts
-   project, and should the export fail when one fails?
+| | Decision | Taken | Built in |
+| --- | --- | --- | --- |
+| A | Can a test stub exist before its DV is written? | Yes. See the chain in section 4.1. | `tracking_needs()` |
+| B | Meaning of `DV Written`. | The step has a function body (`derive` is not `NULL`). The data check stays in the export. | `suite_tracking()` |
+| C | Source of tracking values. | The suite and its test runs set them; the plan records them. Values typed by hand are replaced on the next update. | `update_dv_tracking()` |
+| E | How a test is tied to its DV. | By the test name: `Requirement UID <uid>: ...` first, then `<dv> follows the spec`. | `test_owners()` |
+| F | When is a test populated? | When its `skip()` line has been removed. | `suite_tracking()` |
+
+### Open
+
+Each has a recommendation.
+
+| | Decision | Recommendation |
+| --- | --- | --- |
+| D | One audit or two. | Two, with separate jobs. The plan records development state (code and unit tests) per UID. The evidence ledger records run outcomes on a data snapshot. |
+| G | Should DVs built from a verb get a test stub? Today only hand-written steps do, so verb DVs can never be finished. | Yes: every DV gets a stub (stage 5). |
+| H | How the delivered unit tests run. Today's tests call `run_dv_step()` from autospec; the delivered scripts do not use autospec. | Rewrite each test to run the plain-R block, so the customer needs only `testthat` (stage 6). |
 
 ## 8. Engineering rules
 
@@ -177,8 +190,35 @@ for the architecture.
 
 ## 9. Verification
 
-- Full suite: `Rscript -e "devtools::test()"`. The current baseline is 1079 passed,
-  0 failed, 3 skipped (the `dv_annualise` tests, which need `was.utils`).
+- Full suite: `Rscript -e "devtools::test()"`. The current baseline is 1134
+  expectations passed, 0 failed, 3 skipped (the `dv_annualise` tests, which need
+  `was.utils`).
 - Focused runs: `devtools::test(filter = "dv_tracking")` and so on.
 - End-to-end tests (`tests/testthat/test-e2e_*.R`) cover the path from spec to
   suite on small fixtures. Keep them passing when the flow changes.
+
+## 10. Roadmap
+
+Each stage is test-first. Its tests are written, run red, and agreed before the
+code. Finish and verify one stage before starting the next.
+
+The shared fixture is `tests/testthat/helper-tracking_suite.R`. It is one small
+suite with a step at each point of the chain: written and passing, failing, stub
+only, not written, matched by name, with no test, and passing but reading a
+failing DV. `finished_plan()` is the matching plan.
+
+| Stage | Goal | New functions | Tests | State |
+| --- | --- | --- | --- | --- |
+| 1 | Read each DV's state from the suite files, without running anything. | `suite_tracking(suite_dir)`: `uid`, `dv`, `DV Written`, `Unit Test Stub`, `Unit Test Populated`. | `test-suite_tracking.R`, first 8 tests | Done. |
+| 2 | Run the tests and record each DV's result. | `unit_test_results(suite_dir)`: `uid`, `dv`, `Unit Test Passed` (`yes`, `no`, or blank when skipped or untested). | `test-suite_tracking.R`, last 3 tests | Done. |
+| 3 | Record stages 1 and 2 in the plan. | `record_tracking(plan, tracking)` (pure); `update_dv_tracking(config)` (reads, runs, writes the plan with a backup; exported). | `test-record_dv_tracking.R`, 7 tests; `test-dv_tracking.R` for the rule change | Done. |
+| 4 | Deliver finished DVs only, with a manifest. | `finished_dvs(plan)`, `tracking_gap(plan)`, `select_export_steps()`; `export_dv_scripts(..., plan = NULL, finished_only = FALSE)`; `left_out.csv`. | `test-export_finished_only.R`, 8 tests | Done. |
+| 5 | Give verb DVs a test stub too, so they can be finished. | Change to `write_dv_suite()` / `sync_dv_suite()`. | To write after decision G. | Not started. |
+| 6 | Ship each delivered DV's unit test in the scripts project. | Change to `export_dv_scripts()`. | To write after decision H. | Not started. |
+
+After `update_dv_tracking()`, the `autospec_status()` counts reflect the suite,
+not hand-typed values.
+
+Next: decision G, then stage 5. Until verb DVs get test stubs, only hand-written
+DVs can be finished, so a finished-only export leaves every verb DV out with "no
+unit test".

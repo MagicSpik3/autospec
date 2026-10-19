@@ -45,13 +45,7 @@ update_dv_plan <- function(config, data_names = NULL) {
   )
 
   if (!is.null(previous_plan)) {
-    backup <- file.path(
-      config$output_folder, "plan_backups",
-      paste0("dv_plan_", format(Sys.time(), "%Y-%m-%d_%H%M%S"), ".csv")
-    )
-    dir.create(dirname(backup), recursive = TRUE, showWarnings = FALSE)
-    file.copy(config$plan_file, backup)
-    cli::cli_alert_info("The plan as it was is saved as {.file {backup}}.")
+    backup_plan_file(config)
     report_plan_changes(previous_plan, plan)
   }
 
@@ -59,6 +53,22 @@ update_dv_plan <- function(config, data_names = NULL) {
   write_duplicates_file(plan, config$duplicates_file)
 
   invisible(plan)
+}
+
+
+#' Copy the plan file to the plan_backups folder before it is changed
+#' @keywords internal
+#' @noRd
+backup_plan_file <- function(config) {
+  backup <- file.path(
+    config$output_folder, "plan_backups",
+    paste0("dv_plan_", format(Sys.time(), "%Y-%m-%d_%H%M%S"), ".csv")
+  )
+  dir.create(dirname(backup), recursive = TRUE, showWarnings = FALSE)
+  file.copy(config$plan_file, backup)
+  cli::cli_alert_info("The plan as it was is saved as {.file {backup}}.")
+
+  invisible(backup)
 }
 
 

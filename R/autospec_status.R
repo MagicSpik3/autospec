@@ -84,7 +84,7 @@ autospec_status <- function(config, data_names = NULL) {
   } else if (nrow(tracking) > 0L) {
     paste0(
       nrow(tracking), " tracking problem(s) in the plan (above). Fix the {.field DV Written} and {.field Unit} columns in {.file ",
-      config$plan_file, "}: each step can be yes only when the step before it is yes."
+      config$plan_file, "}: each step can be yes only when the steps it needs are yes."
     )
   } else if (!suite_exists) {
     "Write the suite: run the {.field sync} chunk, or Addins > autospec: Sync the suite with the plan. Rows not signed off yet become steps to fill in later."

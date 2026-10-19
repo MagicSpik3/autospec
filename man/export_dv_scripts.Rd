@@ -8,7 +8,9 @@ export_dv_scripts(
   suite_dir = "dv_suite",
   scripts_dir,
   data,
-  title = "Derived variables"
+  title = "Derived variables",
+  plan = NULL,
+  finished_only = FALSE
 )
 }
 \arguments{
@@ -20,6 +22,14 @@ export_dv_scripts(
 
 \item{title}{A title for the scripts, such as
 \code{"Wealth and Assets Survey Round 9"}.}
+
+\item{plan}{The plan from \code{\link[=read_dv_plan]{read_dv_plan()}}, needed when \code{finished_only} is
+\code{TRUE}.}
+
+\item{finished_only}{When \code{TRUE}, export only the DVs the plan shows are
+finished: written, with a unit test that is filled in and passed (see
+\code{\link[=update_dv_tracking]{update_dv_tracking()}}), and reading no DV that is left out. Checks and
+tests of the DVs left out do not stop the export.}
 }
 \value{
 The paths written, invisibly.
@@ -48,6 +58,9 @@ then the scripts are built on \code{data} and compared DV by DV with the suite
 run on the same data. Any difference stops the export, so what the other
 team receives is known to match the suite. Steps not written yet are left
 out and listed in the README.
+
+Every export also writes \code{left_out.csv}: each DV not exported, with its UID
+and the reason.
 }
 \examples{
 \dontrun{

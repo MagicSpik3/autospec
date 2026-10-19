@@ -113,7 +113,7 @@ test_that("every verb exports as plain R that matches the suite", {
   scripts_dir <- export_quietly(export_example_suite())
 
   expect_setequal(list.files(scripts_dir),
-                  c("dvs", "run_dvs.R", "dv_config.xlsx", "README.md", paste0(basename(scripts_dir), ".Rproj")))
+                  c("dvs", "run_dvs.R", "dv_config.xlsx", "README.md", "left_out.csv", paste0(basename(scripts_dir), ".Rproj")))
   expect_setequal(list.files(file.path(scripts_dir, "dvs")), c("savings.R", "debt.R"))
 
   savings <- readLines(file.path(scripts_dir, "dvs", "savings.R"))

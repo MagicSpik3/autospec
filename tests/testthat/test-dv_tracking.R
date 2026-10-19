@@ -57,19 +57,26 @@ test_that("a value other than yes or no is a problem, and yes in any case is acc
 })
 
 
-test_that("yes on a step needs yes on the step before it", {
-  no_written <- with_tracking(fake_plan_row("a"), written = "no", stub = "yes")
+test_that("yes on a step needs yes on the steps it depends on", {
+  no_written <- with_tracking(fake_plan_row("a"), "no", "yes", "yes", "yes")
   no_stub <- with_tracking(fake_plan_row("a"), written = "yes", stub = "no", populated = "yes")
   no_populated <- with_tracking(fake_plan_row("a"), "yes", "yes", "no", "yes")
 
-  expect_identical(tracking_problems(no_written)$column, "Unit Test Stub")
+  expect_identical(tracking_problems(no_written)$column, "Unit Test Passed")
   expect_identical(tracking_problems(no_stub)$column, "Unit Test Populated")
   expect_identical(tracking_problems(no_populated)$column, "Unit Test Passed")
 })
 
 
+test_that("a test stub may exist before its DV is written", {
+  plan <- with_tracking(fake_plan_row("a"), written = "no", stub = "yes", populated = "yes")
+
+  expect_identical(nrow(tracking_problems(plan)), 0L)
+})
+
+
 test_that("a problem names the DV and sheet it is on", {
-  plan <- with_tracking(fake_plan_row("var_x", sheet_name = "Pension"), written = "no", stub = "yes")
+  plan <- with_tracking(fake_plan_row("var_x", sheet_name = "Pension"), written = "yes", stub = "no", populated = "yes")
 
   problems <- tracking_problems(plan)
 

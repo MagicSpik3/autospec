@@ -21,11 +21,20 @@
 #' team receives is known to match the suite. Steps not written yet are left
 #' out and listed in the README.
 #'
+#' Every export also writes `left_out.csv`: each DV not exported, with its UID
+#' and the reason.
+#'
 #' @param suite_dir The suite folder.
 #' @param scripts_dir The folder to export to; created if missing.
 #' @param data The data the suite runs on, used to prove the scripts match.
 #' @param title A title for the scripts, such as
 #'   `"Wealth and Assets Survey Round 9"`.
+#' @param plan The plan from [read_dv_plan()], needed when `finished_only` is
+#'   `TRUE`.
+#' @param finished_only When `TRUE`, export only the DVs the plan shows are
+#'   finished: written, with a unit test that is filled in and passed (see
+#'   [update_dv_tracking()]), and reading no DV that is left out. Checks and
+#'   tests of the DVs left out do not stop the export.
 #'
 #' @return The paths written, invisibly.
 #' @export
@@ -34,7 +43,8 @@
 #' \dontrun{
 #' export_dv_scripts("dv_suite/R9", "D:/git/was-dvs", was_data, "Wealth and Assets Survey Round 9")
 #' }
-export_dv_scripts <- function(suite_dir = "dv_suite", scripts_dir, data, title = "Derived variables") {
+export_dv_scripts <- function(suite_dir = "dv_suite", scripts_dir, data, title = "Derived variables",
+                              plan = NULL, finished_only = FALSE) {
   if (missing(scripts_dir) || !is.character(scripts_dir) || length(scripts_dir) != 1L ||
       is.na(scripts_dir) || !nzchar(scripts_dir)) {
     cli::cli_alert_danger("{.arg scripts_dir} must be the folder to export to.")
@@ -51,10 +61,32 @@ export_dv_scripts <- function(suite_dir = "dv_suite", scripts_dir, data, title =
     stop("openxlsx is not installed.", call. = FALSE)
   }
 
+  if (!isTRUE(finished_only) && !isFALSE(finished_only)) {
+    cli::cli_alert_danger("{.arg finished_only} must be TRUE or FALSE.")
+    stop("`finished_only` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (finished_only && !is.data.frame(plan)) {
+    cli::cli_alert_danger("To export only finished DVs, give the plan: {.code plan = read_dv_plan(config$plan_file)}.")
+    stop("`finished_only = TRUE` needs the plan.", call. = FALSE)
+  }
+
+  suite <- suppressMessages(read_dv_suite(suite_dir))
+  selection <- select_export_steps(suite$steps, plan, finished_only)
+
+  if (finished_only && !any(selection$keep)) {
+    cli::cli_alert_danger("No DVs are finished, so nothing was exported. Run {.code update_dv_tracking()} to record the suite in the plan.")
+    stop("No DVs are finished, so there is nothing to export.", call. = FALSE)
+  }
+
+  # With finished_only, problems and failing tests of DVs left out do not stop the export.
+  left_out_dvs <- if (finished_only) selection$left_out$dv else character()
+
   problems <- check_dv_suite(suite_dir, data_names = names(data))
 
   # An input missing from this data only leaves that DV unchecked; anything else stops the export.
-  blocking <- problems$severity == "error" & !startsWith(problems$problem, "input not in the data")
+  blocking <- problems$severity == "error" & !startsWith(problems$problem, "input not in the data") &
+    !problems$dv %in% left_out_dvs
 
   if (any(blocking)) {
     cli::cli_alert_danger("The checks found errors, so nothing was exported. Fix them and export again.")
@@ -65,7 +97,9 @@ export_dv_scripts <- function(suite_dir = "dv_suite", scripts_dir, data, title =
 
   if (!is.null(results)) {
     outcomes <- as.data.frame(results)
-    failing <- unique(outcomes$test[outcomes$failed > 0L | outcomes$error])
+    owner <- test_owners(outcomes$test, suite$steps)
+    counts <- is.na(owner) | !names(suite$steps)[owner] %in% left_out_dvs
+    failing <- unique(outcomes$test[(outcomes$failed > 0L | outcomes$error) & counts])
 
     if (length(failing) > 0L) {
       cli::cli_alert_danger("{length(failing)} example test{?s} failed, so nothing was exported: {.val {failing}}.")
@@ -75,10 +109,9 @@ export_dv_scripts <- function(suite_dir = "dv_suite", scripts_dir, data, title =
 
   cli::cli_h1("Exporting the DVs as plain R to {.file {scripts_dir}}")
 
-  suite <- suppressMessages(read_dv_suite(suite_dir))
-  written <- vapply(suite$steps, function(step) is.function(step$derive), logical(1L))
-  unwritten <- names(suite$steps)[!written]
-  steps <- suite$steps[written]
+  left_out <- selection$left_out
+  unwritten <- left_out$dv[left_out$reason == "not written"]
+  steps <- suite$steps[selection$keep]
 
   if (length(steps) == 0L) {
     cli::cli_alert_danger("No steps are written yet, so there is nothing to export.")
@@ -99,9 +132,17 @@ export_dv_scripts <- function(suite_dir = "dv_suite", scripts_dir, data, title =
   blocks <- blocks[names(steps)]
   files <- topic_files(steps)
   spss <- lapply(steps, spss_step_code)
+  left_out <- rbind(left_out, data.frame(
+    dv = unbuildable,
+    uid = step_uids(suite$steps[unbuildable]),
+    reason = rep("an input is missing from the data", length(unbuildable)),
+    stringsAsFactors = FALSE
+  ))
 
   dir.create(file.path(scripts_dir, "dvs"), recursive = TRUE, showWarnings = FALSE)
   file.remove(list.files(file.path(scripts_dir, "dvs"), pattern = "[.]R$", full.names = TRUE))
+  left_out_file <- file.path(scripts_dir, "left_out.csv")
+  utils::write.csv(left_out, left_out_file, row.names = FALSE, na = "")
 
   uses <- attr(files, "uses")
 
@@ -141,8 +182,16 @@ export_dv_scripts <- function(suite_dir = "dv_suite", scripts_dir, data, title =
     cli::cli_alert_warning("{length(unbuildable)} DV{?s} whose input is missing from this data {?is/are} left out too; the README lists them.")
   }
 
+  not_finished <- sum(!left_out$reason %in% c("not written", "an input is missing from the data"))
+
+  if (not_finished > 0L) {
+    cli::cli_alert_warning("{not_finished} written DV{?s} not finished {?is/are} left out.")
+  }
+
+  cli::cli_alert_info("{.file left_out.csv} lists the {nrow(left_out)} DV{?s} left out and why.")
+
   invisible(c(file.path(scripts_dir, "dvs", names(files)), file.path(scripts_dir, "run_dvs.R"),
-              config_file, file.path(scripts_dir, "README.md")))
+              config_file, file.path(scripts_dir, "README.md"), left_out_file))
 }
 
 
