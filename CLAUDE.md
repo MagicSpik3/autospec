@@ -22,3 +22,6 @@
 1. **Explain Before Broad Edits:** For tasks impacting more than 2 files, state your intended strategy briefly before editing.
 2. **Small Granular Steps:** Make small incremental edits rather than massive rewrite sweeps.
 3. **Report Execution Failures:** If a terminal command, build step, or test suite fails, stop and present the exact error log before attempting unguided recursive fixes.S
+
+## Architecture
+- Read [ENGINEERING.md](ENGINEERING.md) before any design change, and keep it current when the architecture changes.

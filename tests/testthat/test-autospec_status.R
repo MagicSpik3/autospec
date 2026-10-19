@@ -79,3 +79,43 @@ test_that("only the chosen topics are shown", {
 
   expect_identical(status$topics$topic, "income")
 })
+
+
+test_that("tracking values that break the chain send you to the plan first", {
+  config <- fake_config()
+  plan <- fake_plan_row("copy_a", "dv_copy", args = "source_col = \"a\"")
+  plan$`DV Written` <- "no"
+  plan$`Unit Test Stub` <- "yes"
+  suppressMessages(write_dv_plan(plan, config$plan_file))
+
+  status <- suppressMessages(autospec_status(config))
+
+  expect_match(status$next_step, "tracking")
+})
+
+
+test_that("the table counts DVs written and unit tests written and passed, per topic", {
+  config <- fake_config()
+  plan <- rbind(fake_plan_row("a"), fake_plan_row("b"), fake_plan_row("c"))
+  plan$`DV Written` <- c("yes", "yes", "no")
+  plan$`Unit Test Stub` <- c("yes", "yes", NA)
+  plan$`Unit Test Populated` <- c("yes", "no", NA)
+  plan$`Unit Test Passed` <- c("yes", NA, NA)
+  suppressMessages(write_dv_plan(plan, config$plan_file))
+
+  status <- suppressMessages(autospec_status(config))
+
+  expect_identical(status$topics$dv_written, 2L)
+  expect_identical(status$topics$unit_tests_written, 1L)
+  expect_identical(status$topics$unit_tests_passed, 1L)
+})
+
+
+test_that("a plan without the tracking columns counts zero", {
+  config <- fake_config()
+  suppressMessages(write_dv_plan(fake_plan_row("a"), config$plan_file))
+
+  status <- suppressMessages(autospec_status(config))
+
+  expect_identical(status$topics$unit_tests_passed, 0L)
+})

@@ -7,7 +7,7 @@
 #   3. Run: source("setup_autospec.R")
 #
 # It is safe to run again at any time, for example after pulling new code.
-# options(autospec.destructive_build = TRUE)
+options(autospec.destructive_build = TRUE)
 local({
   say <- function(kind, text) {
     if (requireNamespace("cli", quietly = TRUE)) {

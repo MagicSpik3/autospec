@@ -106,3 +106,19 @@ test_that("a DV signed off on two rows with the same code is not waiting", {
 test_that("the config must come from read_autospec_config()", {
   expect_error(suppressMessages(update_dv_plan(list())), "not a autospec config")
 })
+
+
+test_that("tracking values survive running the update again", {
+  skip_if_not_installed("openxlsx")
+  config <- spec_config()
+  write_spec_workbook(config$spec_files, "DVa", "DVa = x")
+  plan <- suppressMessages(update_dv_plan(config))
+  plan$`DV Written`[[1L]] <- "yes"
+  plan$`Unit Test Stub`[[1L]] <- "yes"
+  suppressMessages(write_dv_plan(plan, config$plan_file))
+
+  plan <- suppressMessages(update_dv_plan(config))
+
+  expect_identical(plan$`DV Written`[[1L]], "yes")
+  expect_identical(plan$`Unit Test Stub`[[1L]], "yes")
+})

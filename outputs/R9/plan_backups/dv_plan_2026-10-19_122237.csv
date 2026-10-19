@@ -1,0 +1,17 @@
+uid,dv,level,verb,inputs,args,condition,missing_code,status,reviewed_by,reviewed_on,notes,file_name,sheet_name,excel_row,label,instructions
+dv_000001,var_a,person,dv_copy,source_value,"source_col = ""source_value""",,,auto,,,,specs/TEST_ALL_VERBS.csv,Sheet1,3,Copy value,source_value
+dv_000002,row_total,person,dv_row_total,left_value; right_value,"value_cols = c(""left_value"", ""right_value"")",,,auto,,,,specs/TEST_ALL_VERBS.csv,Sheet1,4,Row total,left_value + right_value
+dv_000003,difference,person,dv_difference,left_value; right_value,"minuend_col = ""left_value"", subtrahend_col = ""right_value""",,,auto,,,,specs/TEST_ALL_VERBS.csv,Sheet1,5,Difference,left_value - right_value
+dv_000004,positive_flag,person,dv_flag_positive,score,"value_col = ""score"", threshold = 0",,,auto,,,,specs/TEST_ALL_VERBS.csv,Sheet1,6,Positive flag,IF score > 0 THEN positive_flag = 1 ELSE positive_flag = 0
+dv_000005,var_j,person,dv_flag_if,category,otherwise = 0,"category %in% c(1, 2)",,needs_review,,,confirm the drafted condition,specs/TEST_ALL_VERBS.csv,Sheet1,7,Category flag,"IF category IN (1, 2) THEN var_j = 1 ELSE var_j = 0"
+dv_000006,any_choice,person,dv_flag_any_of,choice_a; choice_b,"value_cols = c(""choice_a"", ""choice_b""), match_values = 2",,,auto,,,,specs/TEST_ALL_VERBS.csv,Sheet1,8,Any choice,"IF ANY(2, choice_a, choice_b) THEN any_choice = 1 ELSE any_choice = 0"
+dv_000007,clean_value,person,dv_clear_sentinels,raw_value,"value_col = ""raw_value""",,,needs_review,,,spec floors every negative at zero (decision D1),specs/TEST_ALL_VERBS.csv,Sheet1,9,Clean value,clean_value = raw_value; IF clean_value < 0 THEN clean_value = 0
+dv_000008,ratio,person,dv_ratio,denominator; numerator,"numerator_col = ""numerator"", denominator_col = ""denominator""",,,auto,,,,specs/TEST_ALL_VERBS.csv,Sheet1,10,Ratio,IF denominator > 0 THEN ratio = numerator / denominator ELSE ratio = 0
+dv_000009,annualised,person,dv_annualise,period; amount,"amount_col = ""amount"", period_col = ""period"", target = ""annual"", period_codes = c(1, 2, 3), multipliers = c(52, 26, 12)",,,needs_review,,,uses the spec's own period codes,specs/TEST_ALL_VERBS.csv,Sheet1,11,Annualised amount,"IF period = 1 THEN annualised = amount * 52
+IF period = 2 THEN annualised = amount * 26
+IF period = 3 THEN annualised = amount * 12"
+dv_000010,midpoint,person,dv_band_midpoint,gcontvbR9_i,"band_col = ""gcontvbR9_i"", table = ""gcontvb""",,,auto,,,,specs/TEST_ALL_VERBS.csv,Sheet1,12,Band midpoint,Mid-point taken from gcontvbR9_i banded amount
+dv_000011,var_f,person,dv_keep_if,category; amount,"value_col = ""amount"", otherwise = 0",category == 2,,needs_review,,,confirm the drafted condition,specs/TEST_ALL_VERBS.csv,Sheet1,13,Kept amount,IF category = 2 THEN var_f = amount ELSE var_f = 0
+dv_000012,present_value,person,dv_discount_to_present_value,future_amount; age,"amount_col = ""future_amount"", age_col = ""age""",,,needs_review,,,confirm rate = 0.05 in settings.R; confirm target_age = 66 in settings.R,specs/TEST_ALL_VERBS.csv,Sheet1,14,Present value,present_value = future_amount / (1 + 0.05) ^ (66 - age)
+dv_000013,hh_total,household,dv_sum_to_household,var_a,"value_col = ""var_a""",,,auto,,,,specs/TEST_ALL_VERBS.csv,Sheet1,15,Household total,aggregate from person level (var_a)
+dv_000014,hh_any,household,dv_any_to_household,positive_flag,"flag_col = ""positive_flag""",,,auto,,,,specs/TEST_ALL_VERBS.csv,Sheet1,16,Anyone positive,MAX(positive_flag) (Aggregated from person level)

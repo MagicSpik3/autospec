@@ -10,7 +10,7 @@ Description: Reads derived variable (DV) specification workbooks, drafts a plan
     conventions live in the config and the suite's settings.
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1
 Imports: 
     cli,
     data.table,

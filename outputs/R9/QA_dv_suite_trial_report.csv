@@ -1,15 +1,33 @@
-topic,dv,uid,outcome,detail
-test_all_verbs_csv,var_a,dv_000001,built,""
-test_all_verbs_csv,row_total,dv_000002,built,""
-test_all_verbs_csv,difference,dv_000003,built,""
-test_all_verbs_csv,positive_flag,dv_000004,built,""
-test_all_verbs_csv,var_j,dv_000005,built,""
-test_all_verbs_csv,any_choice,dv_000006,built,""
-test_all_verbs_csv,clean_value,dv_000007,built,""
-test_all_verbs_csv,ratio,dv_000008,built,""
-test_all_verbs_csv,annualised,dv_000009,built,""
-test_all_verbs_csv,midpoint,dv_000010,built,""
-test_all_verbs_csv,var_f,dv_000011,built,""
-test_all_verbs_csv,present_value,dv_000012,failed,dv_discount_to_present_value(): `rate` must be supplied; set it in settings.R from the pension rates lookup.
-test_all_verbs_csv,hh_total,dv_000013,built,""
-test_all_verbs_csv,hh_any,dv_000014,built,""
+topic,dv,uid,suite_signature,outcome,detail
+test_all_verbs_csv,var_a,REQ-HW-001,f0ca7a92dae803f745f638e3579745c7,built,""
+test_all_verbs_csv,row_total,REQ-HW-002,b1809296639f5cb92bbdc934daa61765,built,""
+test_all_verbs_csv,difference,REQ-HW-003,98e0955bb6d429b273401560559e275c,built,""
+test_all_verbs_csv,positive_flag,REQ-HW-004,2d4ab3801288b5b6cac56b09353136d2,built,""
+test_all_verbs_csv,var_j,REQ-HW-005,61cdabf21c5c61b04d935ea0e0719e3a,built,""
+test_all_verbs_csv,any_choice,REQ-HW-006,c918eeb3ef5b540271cdfa4ffb764d45,built,""
+test_all_verbs_csv,clean_value,REQ-HW-007,85ed3bca58b00efed76fabee998d939a,built,""
+test_all_verbs_csv,ratio,REQ-HW-008,4323c12bec8a84cabf604f4ef91f70ba,built,""
+test_all_verbs_csv,annualised,REQ-HW-009,e155f87c79b9eedb53158e37e59d5fa9,built,""
+test_all_verbs_csv,midpoint,REQ-HW-010,f0e76822ad7c0a2b5fcdbc4480abb3a4,built,""
+test_all_verbs_csv,var_f,REQ-HW-011,027c1c40cf2f0cee6ae69948a8a1d757,built,""
+test_all_verbs_csv,present_value,REQ-HW-012,bd343f836775a9034665172cab6dfe94,failed,dv_discount_to_present_value(): `rate` must be supplied; set it in settings.R from the pension rates lookup.
+test_all_verbs_csv,hh_total,REQ-HW-013,e20bb1ba9fe5d1c29cc44f0b45b0fc2a,built,""
+test_all_verbs_csv,hh_any,REQ-HW-014,aa90ea216500895aa0d0265f460ce5ab,built,""
+test_csv,var_c1,dv_000001,c8da25c2b6f9766639430595490c49f5,not written,derive is NULL
+test_csv,var_c2,dv_000002,e8cedce57e828c87395b55bcae378a07,not written,derive is NULL
+test_csv,var_e1,dv_000003,261b8b701013a2b9d18a8952a8272b3b,not written,derive is NULL
+test_csv,var_e2,dv_000004,5df5720a3c8a31dc0d9ea0d4dd07d76e,not written,derive is NULL
+test_csv,var_h1,dv_000005,f814d8073330c757412eea899515c93e,not written,derive is NULL
+test_csv,var_h2,dv_000006,e941eb0e9e12fe892b35d30bddbd20e7,not written,derive is NULL
+test_csv,var_f1,dv_000007,2cb477418b03a07bcce1cb961df00909,not written,derive is NULL
+test_csv,var_f2,dv_000008,d2d70372731debfcfaaae4703f6b1192,not written,derive is NULL
+test_csv,var_m,dv_000010,5f438d41da99ef34ec1988037d489e82,not written,derive is NULL
+test_csv,var_p,dv_000011,150bf37bf05e51f978a2d62ac6c4ffbf,built,""
+test_csv,var_s1,dv_000012,39b29b8c5a9f6d7f698d6c7394d92191,built,""
+test_csv,var_s2,dv_000013,a4243be7ee49a7b928fd72606e689e37,built,""
+test_csv,var_t,dv_000014,16b0aa1ff21c7f331b35a2a9f04a411f,not written,derive is NULL
+test_csv,var_n,dv_000015,09c6da82004835a0ddaa9c56c199b43c,skipped,"needs var_m, which was not built"
+test_csv,var_u,dv_000016,64b5f23ad8b5921fb4b31ac332d31daf,skipped,"needs var_t, which was not built"
+totals_csv,e,REQ-TOTAL-002,b65271ffa47ce1158498570d02b4a5bb,built,""
+totals_csv,d,REQ-TOTAL-001,01a21e14ce2f4e285f1ee91ca609136c,built,""
+totals_csv,f,REQ-TOTAL-003,ed8633d0444708c80766b44f4f00058b,built,""

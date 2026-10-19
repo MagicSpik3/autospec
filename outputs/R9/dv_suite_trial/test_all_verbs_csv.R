@@ -1,5 +1,5 @@
 # test_all_verbs_csv DVs
-# Written by autospec::write_dv_suite() on 2026-10-04.
+# Written by autospec::write_dv_suite() on 2026-10-19.
 # Each step builds one DV. Edit freely: this file is not overwritten.
 # Run just this topic with run_dv_suite(df, "outputs/R9/dv_suite_trial", topics = "test_all_verbs_csv").
 
@@ -19,7 +19,7 @@ steps$var_a <- dv_step(
       sentinels = settings$sentinels
     )
   },
-  uid = "dv_000001"
+  uid = "REQ-HW-001"
 )
 
 # row_total ------------------------------------------------------------------
@@ -37,7 +37,7 @@ steps$row_total <- dv_step(
       sentinels = settings$sentinels
     )
   },
-  uid = "dv_000002"
+  uid = "REQ-HW-002"
 )
 
 # difference -----------------------------------------------------------------
@@ -55,7 +55,7 @@ steps$difference <- dv_step(
       sentinels = settings$sentinels_in_calculations
     )
   },
-  uid = "dv_000003"
+  uid = "REQ-HW-003"
 )
 
 # positive_flag --------------------------------------------------------------
@@ -73,13 +73,13 @@ steps$positive_flag <- dv_step(
       sentinels = settings$sentinels
     )
   },
-  uid = "dv_000004"
+  uid = "REQ-HW-004"
 )
 
 # var_j ----------------------------------------------------------------------
 # specs/TEST_ALL_VERBS.csv, sheet Sheet1, row 7
 #   IF category IN (1, 2) THEN var_j = 1 ELSE var_j = 0
-# Plan notes: confirm the drafted condition
+# Plan notes: confirm the drafted condition; also defined on Sheet1 row 21 with different text: sign off the right one and set the others' status to duplicate (decision D8)
 steps$var_j <- dv_step(
   label = "Category flag",
   inputs = "category",
@@ -91,7 +91,7 @@ steps$var_j <- dv_step(
       otherwise = 0
     )
   },
-  uid = "dv_000005"
+  uid = "REQ-HW-005"
 )
 
 # any_choice -----------------------------------------------------------------
@@ -108,7 +108,7 @@ steps$any_choice <- dv_step(
       new_col = "any_choice"
     )
   },
-  uid = "dv_000006"
+  uid = "REQ-HW-006"
 )
 
 # clean_value ----------------------------------------------------------------
@@ -127,7 +127,7 @@ steps$clean_value <- dv_step(
       replacement = settings$replacement
     )
   },
-  uid = "dv_000007"
+  uid = "REQ-HW-007"
 )
 
 # ratio ----------------------------------------------------------------------
@@ -146,7 +146,7 @@ steps$ratio <- dv_step(
       sentinels = settings$sentinels_in_calculations
     )
   },
-  uid = "dv_000008"
+  uid = "REQ-HW-008"
 )
 
 # annualised -----------------------------------------------------------------
@@ -170,7 +170,7 @@ steps$annualised <- dv_step(
       sentinels = settings$sentinels
     )
   },
-  uid = "dv_000009"
+  uid = "REQ-HW-009"
 )
 
 # midpoint -------------------------------------------------------------------
@@ -188,7 +188,7 @@ steps$midpoint <- dv_step(
       sentinels = settings$sentinels
     )
   },
-  uid = "dv_000010"
+  uid = "REQ-HW-010"
 )
 
 # var_f ----------------------------------------------------------------------
@@ -208,7 +208,7 @@ steps$var_f <- dv_step(
       sentinels = settings$sentinels
     )
   },
-  uid = "dv_000011"
+  uid = "REQ-HW-011"
 )
 
 # present_value --------------------------------------------------------------
@@ -229,7 +229,7 @@ steps$present_value <- dv_step(
       sentinels = settings$sentinels_in_calculations
     )
   },
-  uid = "dv_000012"
+  uid = "REQ-HW-012"
 )
 
 # hh_total -------------------------------------------------------------------
@@ -248,7 +248,7 @@ steps$hh_total <- dv_step(
       sentinels = settings$sentinels
     )
   },
-  uid = "dv_000013"
+  uid = "REQ-HW-013"
 )
 
 # hh_any ---------------------------------------------------------------------
@@ -265,5 +265,5 @@ steps$hh_any <- dv_step(
       by = settings$by
     )
   },
-  uid = "dv_000014"
+  uid = "REQ-HW-014"
 )

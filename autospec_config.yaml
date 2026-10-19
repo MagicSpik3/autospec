@@ -10,7 +10,9 @@ round: 9
 spec_folder: 'specs'
 # spec_pattern: '_DV_Spec_R{round}.*[.]xlsx$'
 
-spec_pattern: 'TEST_ALL_VERBS[.]csv$'
+# spec_pattern: 'TEST_ALL_VERBS[.]csv$'
+spec_pattern: '*.csv$'
+
 
 
 # Sheets in the spec workbooks that hold no derivations, matched exactly (spaces count)
@@ -30,7 +32,7 @@ exclude_sheets:
 
 # The imputed person-level SPSS file the DVs are added to
 
-data_file: 'test_data/test_input.csv'
+data_file: 'test_data/test_input.sav'
 
 
 

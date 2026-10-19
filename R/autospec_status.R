@@ -43,6 +43,7 @@ autospec_status <- function(config, data_names = NULL) {
   suite_steps <- if (suite_exists) suite_step_index(config$suite_folder) else NULL
   ready_to_sync <- if (suite_exists) steps_ready_to_sync(plan, suite_steps, data_names, config$name_case) else character()
   waiting <- duplicates_to_decide(plan)
+  tracking <- tracking_problems(plan)
 
   table <- status_table(plan, topics, suite_steps, ready_to_sync, waiting)
   print(table, row.names = FALSE)
@@ -57,6 +58,11 @@ autospec_status <- function(config, data_names = NULL) {
 
   if (non_derivations > 0L) {
     cli::cli_alert_warning("{non_derivations} row{?s} marked reviewed {?is/are} not a derivation by {?its/their} notes; set {?it/them} back to not_a_derivation.")
+  }
+
+  if (nrow(tracking) > 0L) {
+    problems <- paste0(tracking$dv, " (", tracking$column, " ", tracking$problem, ")")
+    cli::cli_alert_warning("{nrow(tracking)} tracking problem{?s} in the plan: {utils::head(problems, 5)}{if (length(problems) > 5) ', ...' else ''}.")
   }
 
   missing_inputs <- character()
@@ -74,6 +80,11 @@ autospec_status <- function(config, data_names = NULL) {
       length(unique(tolower(waiting$dv))), " DV(s) are defined on more than one row with different text. ",
       "Choose which row each is built from: see {.file ", config$duplicates_file, "}, then either list the preferred sheet ",
       "under {.field sheet_priority} in the config or mark the others duplicate in the plan, then update the plan (the {.field plan} chunk)."
+    )
+  } else if (nrow(tracking) > 0L) {
+    paste0(
+      nrow(tracking), " tracking problem(s) in the plan (above). Fix the {.field DV Written} and {.field Unit} columns in {.file ",
+      config$plan_file, "}: each step can be yes only when the step before it is yes."
     )
   } else if (!suite_exists) {
     "Write the suite: run the {.field sync} chunk, or Addins > autospec: Sync the suite with the plan. Rows not signed off yet become steps to fill in later."
@@ -246,12 +257,16 @@ make_required_input_table <- function(plan, data_names = NULL, path = NULL) {
 #' @noRd
 status_table <- function(plan, topics, suite_steps, ready_to_sync, waiting) {
   count_in <- function(topic, statuses) sum(plan$topic == topic & plan$status %in% statuses)
+  count_yes <- function(topic, column) sum(plan$topic == topic & tracking_value(plan, column) %in% "yes")
 
   table <- data.frame(
     topic = topics,
     signed_off = vapply(topics, count_in, integer(1L), statuses = "reviewed"),
     to_sign_off = vapply(topics, count_in, integer(1L), statuses = c("auto", "needs_review", "hand_written")),
     duplicates_to_decide = vapply(topics, function(topic) length(unique(tolower(waiting$dv[waiting$topic == topic]))), integer(1L)),
+    dv_written = vapply(topics, count_yes, integer(1L), column = "DV Written"),
+    unit_tests_written = vapply(topics, count_yes, integer(1L), column = "Unit Test Populated"),
+    unit_tests_passed = vapply(topics, count_yes, integer(1L), column = "Unit Test Passed"),
     stringsAsFactors = FALSE,
     row.names = NULL
   )

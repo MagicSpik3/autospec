@@ -109,13 +109,18 @@ build_dv_plan <- function(data_catalogue, data_names = NULL, previous_plan = NUL
     sheet_name = atomic_catalogue$sheet_name,
     excel_row = as.integer(atomic_catalogue$excel_row),
     label = atomic_catalogue$label,
-    instructions = atomic_catalogue$instructions
+    instructions = atomic_catalogue$instructions,
+    "DV Written" = NA_character_,
+    "Unit Test Stub" = NA_character_,
+    "Unit Test Populated" = NA_character_,
+    "Unit Test Passed" = NA_character_
   )
 
   plan <- flag_duplicate_dvs(plan, sheet_priority)
 
   if (!is.null(previous_plan)) {
     plan <- carry_over_reviews(plan, previous_plan)
+    plan <- carry_over_tracking(plan, previous_plan)
     cli::cli_alert_info("Kept {sum(plan$status %in% 'reviewed')} sign-off{?s} from the previous plan.")
   }
 
@@ -757,7 +762,7 @@ signed_off_non_derivations <- function(plan) {
 plan_columns <- function() {
   c("uid", "dv", "level", "verb", "inputs", "args", "condition", "missing_code", "status",
     "reviewed_by", "reviewed_on", "notes", "file_name", "sheet_name",
-    "excel_row", "label", "instructions")
+    "excel_row", "label", "instructions", tracking_columns())
 }
 
 
@@ -765,7 +770,7 @@ plan_columns <- function() {
 #' @keywords internal
 #' @noRd
 optional_plan_columns <- function() {
-  "missing_code"
+  c("missing_code", tracking_columns())
 }
 
 
