@@ -33,17 +33,106 @@ settling duplicate DVs, writing tests and rerunning after specs change. The
 main steps are also in RStudio's **Addins** menu under *autospec*.
 
 When unsure what to do next, run `autospec_status(config)`: it shows each
-topic's progress and names the next step. In short:
+topic's progress and names the next step.
 
-| Step | Code | You |
-|---|---|---|
-| 1. Update the plan | `update_dv_plan()` | Settle DVs defined twice (`QA_duplicate_dvs.csv`, or `sheet_priority` in the config) |
-| 2. Try it out, any time | `trial_run()` | Look at the output; nothing needs signing off |
-| 3. Review the plan | | Open `dv_plan.csv`, check each row, and sign it off: set `status` to `reviewed` and fill in `reviewed_by` and `reviewed_on` |
-| 4. Sync the suite | `sync_dv_suite()` | After each batch of sign-offs. Write the steps still at `derive = NULL` |
-| 5. Check the suite | `check_dv_suite()`, `test_dv_suite()` | Fix anything reported |
-| 6. Build the DVs | `run_dv_suite()` | |
-| 7. Export as plain R | `export_dv_scripts()` | Commit the scripts repo; its users fill in `dv_config.xlsx` and run `run_dvs.R` |
+### How it fits together
+
+Blue boxes are files, yellow boxes are work done by a person, and white boxes
+are the functions you call. `autospec_status()` can be run at any point.
+
+```mermaid
+flowchart TD
+    cfg[/"autospec_config.yaml"/] -->|"read_autospec_config()"| P1
+    sps[/"SPSS syntax (optional)"/] -.->|"spss_to_spec()"| spec
+    spec[/"Spec workbooks<br/>CSV or XLSX"/] --> P1
+    data[("Survey data")]
+
+    subgraph S1["1 · Plan"]
+        P1["update_dv_plan()"] --> planfile[("dv_plan.csv<br/>the audit")]
+        planfile --> P1a["make_required_input_table()"]
+    end
+
+    subgraph S2["2 · Trial run (optional)"]
+        T["trial_run()"]
+    end
+
+    subgraph S3["3 · Review"]
+        R{{"Sign off rows in dv_plan.csv"}}
+    end
+
+    subgraph S4["4 · Sync the suite"]
+        SY["sync_dv_suite()"] --> suite[("dv_suite folder<br/>steps and test stubs")]
+        suite --> HW{{"Write the remaining steps<br/>and fill in their tests"}}
+        HW --> RS["run_dv_step()<br/>to try one step"]
+    end
+
+    subgraph S5["5 · Check and test"]
+        C["check_dv_suite()<br/>test_dv_suite()"]
+    end
+
+    subgraph S6["6 · Record progress"]
+        TR["update_dv_tracking()"]
+    end
+
+    subgraph S7["7 · Build the DVs"]
+        B["run_dv_suite()<br/>check_dv_readiness()"] --> out[("Data with DVs")]
+    end
+
+    subgraph S8["8 · Export"]
+        E["export_dv_scripts()<br/>finished_only = TRUE or FALSE"] --> scripts[("Scripts project<br/>and left_out.csv")]
+    end
+
+    planfile --> T
+    data --> T
+    planfile --> R --> SY
+    HW --> C
+    C -->|"fix and check again"| HW
+    C --> TR
+    TR -->|"tracking columns"| planfile
+    suite --> B
+    data --> B
+    suite --> E
+    data --> E
+    planfile -.->|"finished DVs"| E
+
+    ST["autospec_status()<br/>where am I, what next?"] -.-> planfile
+    ST -.-> suite
+
+    classDef file fill:#e8f1fb,stroke:#4a78b0,color:#1a1a1a
+    classDef person fill:#fff4d6,stroke:#c9a227,color:#1a1a1a
+    classDef fn fill:#ffffff,stroke:#666666,color:#1a1a1a
+    class cfg,sps,spec,data,planfile,suite,out,scripts file
+    class R,HW person
+    class P1,P1a,T,SY,RS,C,TR,B,E,ST fn
+```
+
+When the specs change, go back to stage 1: sign-offs on unchanged rows are
+kept. Stages 4 to 6 repeat until every DV is written and its test passes.
+
+### Stages and functions
+
+| Stage | Main functions | Reads → writes | You |
+|---|---|---|---|
+| 1. Plan | `update_dv_plan()`, which runs `make_catalogue()` and `build_dv_plan()`; `make_required_input_table()` for the input audit | Specs → `dv_plan.csv`, `QA_derivation_catalogue.csv`, `QA_duplicate_dvs.csv` | Settle DVs defined twice (`QA_duplicate_dvs.csv`, or `sheet_priority` in the config) |
+| 2. Trial run (optional, any time) | `trial_run()` | Plan and data → a throwaway suite and `QA_dv_suite_trial_report.csv` | Look at the output; nothing needs signing off |
+| 3. Review | none | `dv_plan.csv` | Check each row and sign it off: set `status` to `reviewed` and fill in `reviewed_by` and `reviewed_on` |
+| 4. Sync the suite | `sync_dv_suite()` (or `write_dv_suite()` for a new suite in one go); `run_dv_step()` to try one step | Plan → `dv_suite/` steps and test stubs | After each batch of sign-offs. Write the steps still at `derive = NULL`, and fill in their tests |
+| 5. Check and test | `check_dv_suite()`, `test_dv_suite()` | Suite → a report of problems and test results | Fix anything reported |
+| 6. Record progress | `update_dv_tracking()` | Suite and its tests → the tracking columns in `dv_plan.csv` (`DV Written`, `Unit Test Stub`, `Unit Test Populated`, `Unit Test Passed`) | Run after testing; `autospec_status()` then counts the DVs written and passing |
+| 7. Build the DVs | `run_dv_suite()`; `check_dv_readiness()` for staged runs | Suite and data → data with DVs, `QA_dv_suite_report.csv` | Set the pension discount rate in `settings.R` first |
+| 8. Export as plain R | `export_dv_scripts()`; with `plan` and `finished_only = TRUE` it delivers only finished DVs | Suite, data and plan → scripts project and `left_out.csv` | Commit the scripts repo; its users fill in `dv_config.xlsx` and run `run_dvs.R` |
+
+Used at any stage:
+
+- `autospec_status()`: progress per topic, and the next step.
+- `read_autospec_config()`: reads the settings; `show_topics()` lists the topics.
+- `read_dv_plan()` and `read_dv_suite()`: load the plan or the suite to work
+  with them directly.
+- `show_verbs()`: the verb library a step can call.
+
+A DV is **finished**, and delivered by a finished-only export, when it is
+written and its unit test is filled in and passes. See
+[ENGINEERING.md](ENGINEERING.md) for the design behind the stages.
 
 To work on some specs only, list them under `topics` in the config
 (`show_topics()` lists the names); the trial run, sync and build then do only
@@ -189,5 +278,5 @@ Run the full package tests from RStudio or the project root:
 devtools::test()
 ```
 
-Latest verification: 1012 passed, 0 failed, 3 skipped because `was.utils` was
+Latest verification: 1134 passed, 0 failed, 3 skipped because `was.utils` was
 not installed.
