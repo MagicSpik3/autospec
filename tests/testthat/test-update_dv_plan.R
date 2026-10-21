@@ -122,3 +122,48 @@ test_that("tracking values survive running the update again", {
   expect_identical(plan$`DV Written`[[1L]], "yes")
   expect_identical(plan$`Unit Test Stub`[[1L]], "yes")
 })
+
+
+test_that("spec issues are listed for the spec owner, and the list is removed once there are none", {
+  skip_if_not_installed("openxlsx")
+  config <- spec_config()
+  write_spec_workbook(config$spec_files, c("DVa", "DVb"), c("IF x > 0 THEN DVa = y", "DVb = x"))
+
+  suppressMessages(update_dv_plan(config, data_names = c("x", "y")))
+  issues <- utils::read.csv(config$spec_issues_file, stringsAsFactors = FALSE)
+
+  expect_identical(issues$code, "no_else")
+  expect_identical(tolower(issues$dv), "dva")
+
+  config$spec_files <- file.path(config$spec_folder, "Clean_DV_Spec_R9.xlsx")
+  write_spec_workbook(config$spec_files, "DVa", "IF x > 0 THEN DVa = y ELSE DVa = 0")
+  suppressMessages(update_dv_plan(config, data_names = c("x", "y")))
+
+  expect_false(file.exists(config$spec_issues_file))
+})
+
+
+test_that("the plan uses default_else from the config for a missing ELSE", {
+  skip_if_not_installed("openxlsx")
+  config <- spec_config()
+  config$default_else <- -9
+  write_spec_workbook(config$spec_files, "DVa", "IF x > 0 THEN DVa = y")
+
+  plan <- suppressMessages(update_dv_plan(config, data_names = c("x", "y")))
+
+  expect_match(plan$args, "otherwise = -9", fixed = TRUE)
+  expect_identical(plan$implied_else, "-9")
+})
+
+
+test_that("a config without default_else drafts 0, as before", {
+  skip_if_not_installed("openxlsx")
+  config <- spec_config()
+  config$default_else <- NULL
+  write_spec_workbook(config$spec_files, "DVa", "IF x > 0 THEN DVa = y")
+
+  plan <- suppressMessages(update_dv_plan(config, data_names = c("x", "y")))
+
+  expect_match(plan$args, "otherwise = 0", fixed = TRUE)
+  expect_identical(plan$implied_else, "0")
+})

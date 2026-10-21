@@ -174,6 +174,8 @@ analyse_derivation <- function(text, dv = NA_character_, level = NA_character_,
 #' @param level The block level: `"person"`, `"household"`, `"input"` or
 #'   `"unknown"`.
 #' @param known_names Variable names known to exist.
+#' @param default_else The value the DV takes where the spec has an IF with no
+#'   ELSE: 0, -9 or NA. Usually `default_else` from the config.
 #'
 #' @return A list with elements `verb` (a verb name or `NA`), `args` (a named
 #'   list of per-row arguments, not including `df`, `new_col`, `condition` or
@@ -185,11 +187,18 @@ analyse_derivation <- function(text, dv = NA_character_, level = NA_character_,
 #' @examples
 #' match_verb("IF CommiR9 in (4,5) THEN BillCredKeepNoR9 = 1 ELSE BillCredKeepNoR9 = 0",
 #'            dv = "BillCredKeepNoR9", level = "person")
-match_verb <- function(text, dv, level = NA_character_, known_names = character()) {
+match_verb <- function(text, dv, level = NA_character_, known_names = character(),
+                       default_else = 0) {
   if (!is.character(dv) || length(dv) != 1L || is.na(dv) || !nzchar(trimws(dv))) {
     cli::cli_alert_danger("{.arg dv} must be a single variable name.")
     stop("`dv` must be a single variable name.", call. = FALSE)
   }
+
+  default_else <- parse_default_else(default_else)
+  no_else_reason <- paste0(
+    "no else branch: drafted as ", format_else_value(default_else),
+    " where the condition is false (default_else in the config)"
+  )
 
   dv <- clean_dv_name(dv)
   analysis <- analyse_derivation(text, dv, level, known_names)
@@ -466,8 +475,8 @@ match_verb <- function(text, dv, level = NA_character_, known_names = character(
       if (is.null(otherwise)) {
         return(with_condition(
           "dv_flag_if", condition,
-          args = list(otherwise = 0),
-          why = "no else branch: drafted as 0 where the condition is false, as the published DVs are (decision D5)"
+          args = list(otherwise = default_else),
+          why = no_else_reason
         ))
       }
     }
@@ -511,8 +520,8 @@ match_verb <- function(text, dv, level = NA_character_, known_names = character(
     if (node_is(then_value, "name") && is.null(otherwise)) {
       return(with_condition(
         "dv_keep_if", condition,
-        args = list(value_col = then_value$name, otherwise = 0),
-        why = "no else branch: drafted as 0 where the condition is false, as the published DVs are (decision D5)"
+        args = list(value_col = then_value$name, otherwise = default_else),
+        why = no_else_reason
       ))
     }
   }

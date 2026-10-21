@@ -20,13 +20,15 @@ go. The output folder is created if it does not exist.
 \details{
 Besides the settings in the file, the result holds the paths the pipeline
 writes to: \code{spec_files}, \code{catalogue_file}, \code{plan_file}, \code{rebuilt_plan_file},
-\code{duplicates_file}, \code{trial_suite_folder}, \code{trial_report_file} and
+\code{duplicates_file}, \code{spec_issues_file}, \code{trial_suite_folder}, \code{trial_report_file} and
 \code{report_file}, and \code{all_topics}, the topic of every spec workbook.
 
 Settings added after the first config files were made are optional and
 take a default when missing: \code{name_case} is \code{"auto"}, \code{scripts_folder} is
 a \code{dv_scripts} folder inside the output folder, \code{topics} is empty (every
-topic) and \code{sheet_priority} is empty (no rule).
+topic), \code{sheet_priority} is empty (no rule) and \code{default_else} is 0.
+\code{default_else} is the value a DV takes where its spec has an IF with no
+ELSE: 0, -9 (the legacy code for missing) or NA.
 }
 \examples{
 \dontrun{

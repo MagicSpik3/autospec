@@ -113,7 +113,7 @@ kept. Stages 4 to 6 repeat until every DV is written and its test passes.
 
 | Stage | Main functions | Reads → writes | You |
 |---|---|---|---|
-| 1. Plan | `update_dv_plan()`, which runs `make_catalogue()` and `build_dv_plan()`; `make_required_input_table()` for the input audit | Specs → `dv_plan.csv`, `QA_derivation_catalogue.csv`, `QA_duplicate_dvs.csv` | Settle DVs defined twice (`QA_duplicate_dvs.csv`, or `sheet_priority` in the config) |
+| 1. Plan | `update_dv_plan()`, which runs `make_catalogue()` and `build_dv_plan()`; `make_required_input_table()` for the input audit | Specs → `dv_plan.csv`, `QA_derivation_catalogue.csv`, `QA_duplicate_dvs.csv`, `QA_spec_issues.csv` | Settle DVs defined twice (`QA_duplicate_dvs.csv`, or `sheet_priority` in the config). Send `QA_spec_issues.csv` to the spec owner |
 | 2. Trial run (optional, any time) | `trial_run()` | Plan and data → a throwaway suite and `QA_dv_suite_trial_report.csv` | Look at the output; nothing needs signing off |
 | 3. Review | none | `dv_plan.csv` | Check each row and sign it off: set `status` to `reviewed` and fill in `reviewed_by` and `reviewed_on` |
 | 4. Sync the suite | `sync_dv_suite()` (or `write_dv_suite()` for a new suite in one go); `run_dv_step()` to try one step | Plan → `dv_suite/` steps and test stubs | After each batch of sign-offs. Write the steps still at `derive = NULL`, and fill in their tests |
@@ -129,6 +129,18 @@ Used at any stage:
 - `read_dv_plan()` and `read_dv_suite()`: load the plan or the suite to work
   with them directly.
 - `show_verbs()`: the verb library a step can call.
+
+The plan keeps two kinds of message apart. `spec_issues` lists defects in the
+spec itself, each with a code: omissions (`no_else`, `missing_value`,
+`no_derivation`, `no_dv_name`, `branch_without_name`), errors
+(`unknown_variable`, `duplicate_dv`, `unparsed`) and typos the parser repaired
+(`typo`). A DV is a column, so every row needs a value: an `IF` with no `ELSE`
+is flagged, and the DV takes `default_else` from the config where no branch
+applies: `0` (the default), `-9` (the legacy code for missing) or `NA`. The
+plan's `implied_else` column shows the value on each row where it was used, and
+the suite shows it above the step as `# Implied ELSE:`. `notes` holds prompts
+for the reviewer about how the spec was drafted. A row with a spec issue is
+never `auto`.
 
 A DV is **finished**, and delivered by a finished-only export, when it is
 written and its unit test is filled in and passes. See
@@ -264,7 +276,9 @@ not crash-atomic writes.
 
 - `specs/TEST_ALL_VERBS.csv` and `test_data/test_input.csv` exercise all 14
   registered verbs and trace each operation from its requirement UID through
-  the suite, run report and unit test.
+  the suite, run report and unit test. `REQ-HW-015` covers an `IF ... THEN`
+  with no `ELSE` (`IF var_1 > 0 THEN var_2 = var_3`), drafted as `dv_keep_if`
+  with 0 where the condition is false.
 - `specs/totals.csv` deliberately lists `F = D + E` before its producers
   `D = A + B` and `E = B + C`. A full run orders them automatically; staged
   runs show F blocked until both producer UIDs have succeeded, including after
@@ -278,5 +292,5 @@ Run the full package tests from RStudio or the project root:
 devtools::test()
 ```
 
-Latest verification: 1134 passed, 0 failed, 3 skipped because `was.utils` was
+Latest verification: 1235 passed, 0 failed, 3 skipped because `was.utils` was
 not installed.

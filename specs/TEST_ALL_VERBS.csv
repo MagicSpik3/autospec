@@ -14,5 +14,6 @@ IF period = 3 THEN annualised = amount * 12",,,REQ-HW-009,,,,,,
 ,,,,midpoint,Band midpoint,Mid-point taken from gcontvbR9_i banded amount,,,REQ-HW-010,,,,,,
 ,,,,var_f,Kept amount,IF category = 2 THEN var_f = amount ELSE var_f = 0,,,REQ-HW-011,,,,,,
 ,,,,present_value,Present value,present_value = future_amount / (1 + 0.05) ^ (66 - age),,,REQ-HW-012,,,,,,
+,,,,var_2,Kept without else,IF var_1 > 0 THEN var_2 = var_3,,,REQ-HW-015,,,,,,
 ,,,,,,,,,,hh_total,Household total,aggregate from person level (var_a),,,REQ-HW-013
 ,,,,,,,,,,hh_any,Anyone positive,MAX(positive_flag) (Aggregated from person level),,,REQ-HW-014

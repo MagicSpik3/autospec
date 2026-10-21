@@ -52,13 +52,15 @@ create_autospec_config <- function(path = "autospec_config.yaml", round = NULL,
 #'
 #' Besides the settings in the file, the result holds the paths the pipeline
 #' writes to: `spec_files`, `catalogue_file`, `plan_file`, `rebuilt_plan_file`,
-#' `duplicates_file`, `trial_suite_folder`, `trial_report_file` and
+#' `duplicates_file`, `spec_issues_file`, `trial_suite_folder`, `trial_report_file` and
 #' `report_file`, and `all_topics`, the topic of every spec workbook.
 #'
 #' Settings added after the first config files were made are optional and
 #' take a default when missing: `name_case` is `"auto"`, `scripts_folder` is
 #' a `dv_scripts` folder inside the output folder, `topics` is empty (every
-#' topic) and `sheet_priority` is empty (no rule).
+#' topic), `sheet_priority` is empty (no rule) and `default_else` is 0.
+#' `default_else` is the value a DV takes where its spec has an IF with no
+#' ELSE: 0, -9 (the legacy code for missing) or NA.
 #'
 #' @param path The config file.
 #'
@@ -143,6 +145,7 @@ read_autospec_config <- function(path = "autospec_config.yaml") {
 
   config$topics <- optional_names(raw$topics, "topics", path)
   config$sheet_priority <- fill_round(optional_names(raw$sheet_priority, "sheet_priority", path), round)
+  config$default_else <- if (is.null(raw$default_else)) 0 else parse_default_else(raw$default_else)
 
   pattern_problem <- tryCatch(
     {
@@ -176,6 +179,7 @@ read_autospec_config <- function(path = "autospec_config.yaml") {
   config$plan_file <- file.path(output_folder, "dv_plan.csv")
   config$rebuilt_plan_file <- file.path(output_folder, "dv_plan_rebuilt.csv")
   config$duplicates_file <- file.path(output_folder, "QA_duplicate_dvs.csv")
+  config$spec_issues_file <- file.path(output_folder, "QA_spec_issues.csv")
   config$trial_suite_folder <- file.path(output_folder, "dv_suite_trial")
   config$trial_report_file <- file.path(output_folder, "QA_dv_suite_trial_report.csv")
   config$report_file <- file.path(output_folder, "QA_dv_suite_report.csv")
@@ -357,6 +361,7 @@ report_config <- function(config) {
     spec = "as the spec spells them"
   )[[config$name_case]]
   cli::cli_alert_info("New DVs will be named {name_style} ({.field name_case}: {config$name_case}).")
+  cli::cli_alert_info("Where a spec gives no ELSE, DVs take {format_else_value(config$default_else)} ({.field default_else}).")
 
   if (!nzchar(config$data_file)) {
     cli::cli_alert_warning("{.field data_file} is not set. Set it before writing the suite or building DVs.")
@@ -463,6 +468,10 @@ config_optional_lines <- function() {
     "# sheet_priority:",
     "#   - 'R9_Pension_Income'",
     "#   - 'R9_Other_Invest_Pension_Ben '",
-    "sheet_priority: []"
+    "sheet_priority: []",
+    "",
+    "# The value a DV takes where its spec has an IF with no ELSE: 0, -9 (the legacy code",
+    "# for missing) or NA. The plan's implied_else column shows each row where it was used.",
+    "default_else: 0"
   )
 }

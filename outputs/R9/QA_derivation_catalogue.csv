@@ -13,8 +13,9 @@ IF period = 3 THEN annualised = amount * 12",annualised,period; amount,parsed,
 REQ-HW-010,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,12,midpoint,Band midpoint,,,Mid-point taken from gcontvbR9_i banded amount,midpoint,gcontvbR9_i,midpoint,
 REQ-HW-011,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,13,var_f,Kept amount,,,IF category = 2 THEN var_f = amount ELSE var_f = 0,var_f,category; amount,parsed,
 REQ-HW-012,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,14,present_value,Present value,,,present_value = future_amount / (1 + 0.05) ^ (66 - age),present_value,future_amount; age,parsed,
-REQ-HW-013,specs/TEST_ALL_VERBS.csv,Sheet1,Household,M,household,Household,15,hh_total,Household total,,,aggregate from person level (var_a),,var_a,parsed,
-REQ-HW-014,specs/TEST_ALL_VERBS.csv,Sheet1,Household,M,household,Household,16,hh_any,Anyone positive,,,MAX(positive_flag) (Aggregated from person level),,positive_flag,parsed,
+REQ-HW-015,specs/TEST_ALL_VERBS.csv,Sheet1,Person,G,person,Person,15,var_2,Kept without else,,,IF var_1 > 0 THEN var_2 = var_3,var_2,var_1; var_3,parsed,
+REQ-HW-013,specs/TEST_ALL_VERBS.csv,Sheet1,Household,M,household,Household,16,hh_total,Household total,,,aggregate from person level (var_a),,var_a,parsed,
+REQ-HW-014,specs/TEST_ALL_VERBS.csv,Sheet1,Household,M,household,Household,17,hh_any,Anyone positive,,,MAX(positive_flag) (Aggregated from person level),,positive_flag,parsed,
 dv_000001,specs/TEST.csv,Sheet1,Person,G,person,Mail Order,8,var_c1,Years until expected Mail Order 1 repayment date,,Difference in years between the expected repayment end date and interview year.,"IF var_a > 0  AND var_b1 > 0 AND var_d1 > 0 THEN
 var_c1 = var_b1 - YearR9",var_c1,var_a; var_b1; var_d1; YearR9,parsed,
 dv_000002,specs/TEST.csv,Sheet1,Person,G,person,Mail Order,8,var_c2,Years until expected Mail Order 2 repayment date,,Difference in years between the expected repayment end date and interview year.,"IF var_a > 0  AND var_b2 > 0 AND var_d2 > 0 THEN

@@ -75,12 +75,12 @@ test_that("a compound condition drafts dv_flag_if with an R condition", {
 })
 
 
-test_that("a flag with no else branch is drafted with otherwise = 0 and decision D5", {
+test_that("a flag with no else branch is drafted with the default otherwise = 0, citing default_else", {
   match <- match_verb("IF FTypeAcc_binary1r9_i = 1\n    CurrAccR9=1.", "CurrAccR9", "person")
 
   expect_identical(match$verb, "dv_flag_if")
   expect_identical(match$args$otherwise, 0)
-  expect_true(any(grepl("decision D5", match$reasons)))
+  expect_true(any(grepl("default_else in the config", match$reasons, fixed = TRUE)))
 })
 
 

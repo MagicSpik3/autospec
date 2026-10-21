@@ -46,8 +46,9 @@ if (file_ext %in% c("sav", "zsav")) {
 ## Where am I?
 
 Shows, per topic, how many rows are signed off and still to sign off, any DVs
-defined twice that need a decision, how much of the suite is written, and
-the chunk to run next.
+defined twice that need a decision, how much of the suite is written, how many
+DVs are written and have a unit test that is filled in and passes (from step 6),
+and the chunk to run next.
 
 ```{r status}
 autospec_status(config, data_names)
@@ -62,6 +63,12 @@ changed are kept, the old plan is backed up, and what changed is listed.
 DVs defined on more than one sheet with different text are listed in
 `QA_duplicate_dvs.csv`. Settle a whole sheet at once by listing the preferred
 sheet under `sheet_priority` in the config and running this chunk again.
+
+Defects in the spec itself are listed in the plan's `spec_issues` column and in
+`QA_spec_issues.csv`, one row per issue, to send to the spec owner: omissions
+such as an `IF` with no `ELSE` (meanwhile the DV takes `default_else` from the
+config there, and `implied_else` shows the value), errors such as an
+unknown variable, and typos the parser repaired.
 
 ```{r plan, eval=FALSE}
 update_dv_plan(config, data_names)
@@ -142,7 +149,20 @@ check_dv_suite(config$suite_folder, data_names = data_names)
 test_dv_suite(config$suite_folder)
 ```
 
-## 6. Build the DVs
+## 6. Record progress
+
+Records in `dv_plan.csv` which DVs are written and which have a unit test that
+is filled in and passes: the `DV Written`, `Unit Test Stub`, `Unit Test
+Populated` and `Unit Test Passed` columns. It reads the suite and runs its
+tests, so run it after checking. Values typed in those columns are replaced, and
+the old plan is backed up first. The `status` chunk counts these, and a
+finished-only export (step 8) uses them.
+
+```{r tracking, eval=FALSE}
+update_dv_tracking(config)
+```
+
+## 7. Build the DVs
 
 Set the pension discount rate in the suite's `settings.R` first. Steps that
 fail, are not written yet or are missing an input are reported and skipped.
@@ -158,7 +178,7 @@ was_data <- run_dv_suite(
 )
 ```
 
-## 7. Save the data with DVs
+## 7a. Save the data with DVs
 
 Saved to `output_data_file` in the config, if it is set.
 
@@ -179,11 +199,18 @@ is checked and tested, and the plain R compared DV by DV with the suite on
 `was_data`, before anything is written. Export from the whole suite, not a
 topic selection.
 
+To deliver only the finished DVs while the rest are still being worked on, set
+`finished_only = TRUE`, after running step 6. A finished DV is written, with a
+unit test that is filled in and passes. Either way, `left_out.csv` in the
+scripts folder lists each DV left out and why.
+
 ```{r export, eval=FALSE}
 export_dv_scripts(
   config$suite_folder,
   config$scripts_folder,
   was_data,
-  title = paste("Spec ", config$round)
+  title = paste("Spec ", config$round),
+  plan = read_dv_plan(config$plan_file),
+  finished_only = FALSE
 )
 ```

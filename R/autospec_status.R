@@ -60,6 +60,12 @@ autospec_status <- function(config, data_names = NULL) {
     cli::cli_alert_warning("{non_derivations} row{?s} marked reviewed {?is/are} not a derivation by {?its/their} notes; set {?it/them} back to not_a_derivation.")
   }
 
+  with_issues <- sum(has_spec_issues(plan))
+
+  if (with_issues > 0L) {
+    cli::cli_alert_warning("{with_issues} row{?s} {?has/have} spec issues: omissions, errors or typos in the spec. {.file {basename(config$plan_file)}} lists them in {.field spec_issues}; updating the plan writes them to {.file QA_spec_issues.csv} for the spec owner.")
+  }
+
   if (nrow(tracking) > 0L) {
     problems <- paste0(tracking$dv, " (", tracking$column, " ", tracking$problem, ")")
     cli::cli_alert_warning("{nrow(tracking)} tracking problem{?s} in the plan: {utils::head(problems, 5)}{if (length(problems) > 5) ', ...' else ''}.")
@@ -267,6 +273,7 @@ status_table <- function(plan, topics, suite_steps, ready_to_sync, waiting) {
     dv_written = vapply(topics, count_yes, integer(1L), column = "DV Written"),
     unit_tests_written = vapply(topics, count_yes, integer(1L), column = "Unit Test Populated"),
     unit_tests_passed = vapply(topics, count_yes, integer(1L), column = "Unit Test Passed"),
+    spec_issues = vapply(topics, function(topic) sum(plan$topic == topic & has_spec_issues(plan)), integer(1L)),
     stringsAsFactors = FALSE,
     row.names = NULL
   )

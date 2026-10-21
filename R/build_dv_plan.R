@@ -20,6 +20,9 @@
 #' @param sheet_priority Optional sheet names, most preferred first, deciding
 #'   which row of a repeated DV is signed off. Matched ignoring surrounding
 #'   spaces.
+#' @param default_else The value a DV takes where its spec has an IF with no
+#'   ELSE: 0, -9 or NA. Usually `default_else` from the config. Each row where
+#'   it was used records it in `implied_else`.
 #'
 #' @return A data.table with one row per catalogue row.
 #' @import data.table
@@ -31,7 +34,9 @@
 #' write_dv_plan(plan, "dv_plan.csv")
 #' }
 build_dv_plan <- function(data_catalogue, data_names = NULL, previous_plan = NULL,
-                          sheet_priority = NULL) {
+                          sheet_priority = NULL, default_else = 0) {
+  default_else <- parse_default_else(default_else)
+
   if (!is.data.frame(data_catalogue)) {
     cli::cli_alert_danger("{.arg data_catalogue} must be a data frame from make_catalogue().")
     stop("`data_catalogue` must be a data frame.", call. = FALSE)
@@ -77,7 +82,8 @@ build_dv_plan <- function(data_catalogue, data_names = NULL, previous_plan = NUL
       dv = atomic_catalogue$variable[[index]],
       level = atomic_catalogue$level[[index]],
       known_names = known_names,
-      check_all_names = !is.null(data_names)
+      check_all_names = !is.null(data_names),
+      default_else = default_else
     )
   })
 
@@ -105,6 +111,8 @@ build_dv_plan <- function(data_catalogue, data_names = NULL, previous_plan = NUL
     reviewed_by = NA_character_,
     reviewed_on = NA_character_,
     notes = plan_notes,
+    spec_issues = NA_character_,
+    implied_else = NA_character_,
     file_name = atomic_catalogue$file_name,
     sheet_name = atomic_catalogue$sheet_name,
     excel_row = as.integer(atomic_catalogue$excel_row),
@@ -126,6 +134,7 @@ build_dv_plan <- function(data_catalogue, data_names = NULL, previous_plan = NUL
 
   plan <- prefer_sheets(plan, sheet_priority)
   plan <- settle_duplicate_dvs(plan)
+  plan <- add_spec_issues(plan, names_checked = !is.null(data_names), default_else = default_else)
 
   status_counts <- table(factor(plan$status, levels = plan_statuses()))
   cli::cli_alert_success("Plan drafted: {nrow(plan)} row{?s}.")
@@ -225,7 +234,7 @@ expand_atomic_catalogue_rows <- function(catalogue) {
 #' Draft one plan row
 #' @keywords internal
 #' @noRd
-draft_plan_row <- function(text, dv, level, known_names, check_all_names) {
+draft_plan_row <- function(text, dv, level, known_names, check_all_names, default_else = 0) {
   if (is_blank(dv)) {
     return(list(verb = NA_character_, inputs = NA_character_, args = NA_character_,
                 condition = NA_character_, status = "needs_review",
@@ -238,7 +247,7 @@ draft_plan_row <- function(text, dv, level, known_names, check_all_names) {
                 notes = "no derivation text"))
   }
 
-  match <- match_verb(text, dv, level, known_names)
+  match <- match_verb(text, dv, level, known_names, default_else = default_else)
 
   name_notes <- character()
 
@@ -761,7 +770,7 @@ signed_off_non_derivations <- function(plan) {
 #' @noRd
 plan_columns <- function() {
   c("uid", "dv", "level", "verb", "inputs", "args", "condition", "missing_code", "status",
-    "reviewed_by", "reviewed_on", "notes", "file_name", "sheet_name",
+    "reviewed_by", "reviewed_on", "notes", "spec_issues", "implied_else", "file_name", "sheet_name",
     "excel_row", "label", "instructions", tracking_columns())
 }
 
@@ -770,7 +779,7 @@ plan_columns <- function() {
 #' @keywords internal
 #' @noRd
 optional_plan_columns <- function() {
-  c("missing_code", tracking_columns())
+  c("missing_code", "spec_issues", "implied_else", tracking_columns())
 }
 
 

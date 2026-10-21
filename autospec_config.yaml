@@ -72,3 +72,7 @@ topics: []
 #   - 'R9_Pension_Income'
 #   - 'R9_Other_Invest_Pension_Ben '
 sheet_priority: []
+
+# The value a DV takes where its spec has an IF with no ELSE: 0, -9 (the legacy code
+# for missing) or NA. The plan's implied_else column shows each row where it was used.
+default_else: 0

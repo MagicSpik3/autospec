@@ -8,7 +8,8 @@ build_dv_plan(
   data_catalogue,
   data_names = NULL,
   previous_plan = NULL,
-  sheet_priority = NULL
+  sheet_priority = NULL,
+  default_else = 0
 )
 }
 \arguments{
@@ -22,6 +23,10 @@ every input matching neither a DV nor a data column is noted.}
 \item{sheet_priority}{Optional sheet names, most preferred first, deciding
 which row of a repeated DV is signed off. Matched ignoring surrounding
 spaces.}
+
+\item{default_else}{The value a DV takes where its spec has an IF with no
+ELSE: 0, -9 or NA. Usually \code{default_else} from the config. Each row where
+it was used records it in \code{implied_else}.}
 }
 \value{
 A data.table with one row per catalogue row.

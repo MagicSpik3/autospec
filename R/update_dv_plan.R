@@ -41,7 +41,8 @@ update_dv_plan <- function(config, data_names = NULL) {
     data_catalogue,
     data_names = data_names,
     previous_plan = previous_plan,
-    sheet_priority = config$sheet_priority
+    sheet_priority = config$sheet_priority,
+    default_else = if (is.null(config$default_else)) 0 else config$default_else
   )
 
   if (!is.null(previous_plan)) {
@@ -51,6 +52,7 @@ update_dv_plan <- function(config, data_names = NULL) {
 
   save_plan_file(plan, config$plan_file)
   write_duplicates_file(plan, config$duplicates_file)
+  write_spec_issues_file(plan, config$spec_issues_file)
 
   invisible(plan)
 }

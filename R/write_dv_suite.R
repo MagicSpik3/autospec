@@ -526,6 +526,16 @@ step_lines <- function(dv, row, label, inputs, call_lines, written, reason, in_d
     comment_lines <- c(comment_lines, paste0("# Plan notes: ", row$notes))
   }
 
+  if (has_plan_value(row, "spec_issues")) {
+    comment_lines <- c(comment_lines, paste0("# Spec issues: ", row$spec_issues))
+  }
+
+  if (has_plan_value(row, "implied_else")) {
+    comment_lines <- c(comment_lines, paste0(
+      "# Implied ELSE: ", row$implied_else, " where no branch applies (default_else in the config)"
+    ))
+  }
+
   missing_code <- plan_missing_code(row)
   uid <- if ("uid" %in% names(row) && !is.null(row$uid) && !is.na(row$uid)) {
     encodeString(as.character(row$uid), quote = "\"")
@@ -952,4 +962,12 @@ test_stub_lines <- function(topic, stubs, header = TRUE) {
   })
 
   c(if (header) header_lines, unlist(blocks, use.names = FALSE))
+}
+
+
+#' Whether a plan row has a value in a column that older plans may not have
+#' @keywords internal
+#' @noRd
+has_plan_value <- function(row, column) {
+  column %in% names(row) && length(row[[column]]) == 1L && !is_blank(row[[column]])
 }

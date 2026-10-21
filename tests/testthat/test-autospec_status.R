@@ -119,3 +119,15 @@ test_that("a plan without the tracking columns counts zero", {
 
   expect_identical(status$topics$unit_tests_passed, 0L)
 })
+
+
+test_that("the table counts rows with spec issues, per topic", {
+  config <- fake_config()
+  plan <- rbind(fake_plan_row("a"), fake_plan_row("b"))
+  plan$spec_issues <- c("[no_else] no ELSE branch", NA)
+  suppressMessages(write_dv_plan(plan, config$plan_file))
+
+  status <- suppressMessages(autospec_status(config))
+
+  expect_identical(status$topics$spec_issues, 1L)
+})

@@ -85,8 +85,10 @@ all_verbs_demo <- build_all_verbs_demo()
 
 
 test_that("the demo traces every verb and reports every required input", {
-  expect_identical(sort(all_verbs_demo$plan$verb), sort(registered_verbs()))
-  expect_identical(all_verbs_demo$plan$uid, sprintf("REQ-HW-%03d", seq_len(14L)))
+  # Every verb is used at least once; dv_keep_if is used with and without an ELSE.
+  expect_setequal(all_verbs_demo$plan$verb, registered_verbs())
+  expect_setequal(all_verbs_demo$plan$uid, sprintf("REQ-HW-%03d", seq_len(15L)))
+  expect_false(anyDuplicated(all_verbs_demo$plan$uid) > 0L)
 
   reordered_plan <- suppressMessages(build_dv_plan(
     all_verbs_demo$catalogue[rev(seq_len(nrow(all_verbs_demo$catalogue))), ],
@@ -123,8 +125,20 @@ expected_demo_values <- list(
     500 / 1.05
   ),
   hh_total = c(5, 5, 4),
-  hh_any = c(1, 1, 0)
+  hh_any = c(1, 1, 0),
+  var_2 = c(7, 0, 9)
 )
+
+
+test_that("IF ... THEN keeping a column, with no ELSE, is drafted as dv_keep_if with 0 elsewhere", {
+  row <- all_verbs_demo$plan[all_verbs_demo$plan$dv == "var_2", ]
+
+  expect_identical(row$verb, "dv_keep_if")
+  expect_identical(row$condition, "var_1 > 0")
+  expect_match(row$args, "value_col = \"var_3\"", fixed = TRUE)
+  expect_match(row$args, "otherwise = 0", fixed = TRUE)
+  expect_match(row$spec_issues, "[no_else]", fixed = TRUE)
+})
 
 
 test_requirement <- function(uid, dv, expected) {

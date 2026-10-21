@@ -15,6 +15,7 @@ fake_config <- function(topics = character(), all_topics = "test", sheet_priorit
     catalogue_file = file.path(output_folder, "QA_derivation_catalogue.csv"),
     plan_file = file.path(output_folder, "dv_plan.csv"),
     duplicates_file = file.path(output_folder, "QA_duplicate_dvs.csv"),
+    spec_issues_file = file.path(output_folder, "QA_spec_issues.csv"),
     trial_suite_folder = file.path(output_folder, "dv_suite_trial"),
     trial_report_file = file.path(output_folder, "QA_dv_suite_trial_report.csv"),
     report_file = file.path(output_folder, "QA_dv_suite_report.csv"),

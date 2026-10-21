@@ -57,6 +57,7 @@ got to. It changes nothing.
 | `plan_backups/` | `update_dv_plan()` | people | Copy of the plan before each update. |
 | `dv_suite/R9/` | `write_dv_suite()`, `sync_dv_suite()`, people | check, run, export | The DV functions and tests. Hand-written steps live here. |
 | Evidence ledger (CSV) | `run_dv_suite()` | readiness gate | Per-UID outcome, tied to a suite signature. |
+| `QA_spec_issues.csv` | `update_dv_plan()` | the spec owner | One row per defect in the spec. Removed when there are none. |
 | `QA_*.csv` reports | the steps above | people | Human-readable records. |
 | Scripts folder | `export_dv_scripts()` | the customer | The delivered product. |
 
@@ -74,6 +75,38 @@ people's sign-offs or hand-written code are backed up before any change.
 - The plan must have the required columns and only the recognised statuses
   (`plan_statuses()`). Tracking columns are optional on read so older plans still
   load.
+
+### 4.0 Spec issues and review notes
+
+The plan keeps two kinds of message apart, because different people act on
+them (`R/spec_issues.R`):
+
+- **`spec_issues`**: defects in the spec itself, for the spec owner. Each is
+  written `[code] message`. Omissions: `no_else`, `missing_value`,
+  `no_derivation`, `no_dv_name`, `branch_without_name`. Errors:
+  `unknown_variable`, `duplicate_dv`, `unparsed`. Repaired typos: `typo`.
+- **`notes`**: prompts for the reviewer about how the spec was drafted, such as
+  "confirm the drafted condition".
+
+Rules:
+
+- A DV is a column, so every row needs a value. An `IF` with no `ELSE`, before
+  the DV has any value, is a `no_else` issue whatever verb fits
+  (`missing_else()`). The DV takes `default_else` from the config where no
+  branch applies: 0 (the default, as the published DVs are), -9 (the legacy
+  code for missing) or NA (`R/default_else.R`). The plan's `implied_else`
+  column records the value on each row where it was used: a row no verb fits,
+  for whoever writes it, or a row whose verb takes `otherwise`. A verb that
+  cannot take it, such as `dv_annualise`, is flagged but has nothing implied.
+  The suite shows it above the step as `# Implied ELSE:`, which the export
+  keeps; `# Spec issues:` is dropped from the export, like `# Plan notes:`.
+- A plain unknown variable is an issue only when the data's names were given;
+  without them, an input may still be in the data. A near miss of a DV name
+  ("did you mean ...") is always an issue.
+- A row with a spec issue is never `auto`. Spec issues do not block sign-off or
+  export; the reviewer's decision is recorded in `args` as usual.
+- `spec_issue_patterns()` maps each drafting message to its code. A new defect
+  message needs an entry there, and a line in `test-spec_issues.R`.
 
 ### 4.1 DV states
 
@@ -108,7 +141,7 @@ files.
 | Parsing | `get_spec`, `make_catalogue`, `parse_derivation`, `tokenise_derivation`, `match_verb`, `derivation_tree`, `find_derivation_blocks` | Turn spec text into structured derivations. |
 | Verbs | `dv_*.R`, `verb_library`, `verb_checks` | The fixed set of DV operations, each a pure function over a data frame. |
 | Code generation | `plain_code`, `spss_code`, `write_dv_suite` | Turn a plan row into R code, with SPSS shown as comments. |
-| Plan | `build_dv_plan`, `update_dv_plan`, `dv_tracking`, `update_dv_tracking` | Draft the plan, keep sign-offs, check tracking values, and record them from the suite. |
+| Plan | `build_dv_plan`, `update_dv_plan`, `spec_issues`, `dv_tracking`, `update_dv_tracking` | Draft the plan, flag spec issues, keep sign-offs, check tracking values, and record them from the suite. |
 | Suite | `sync_dv_suite`, `dv_suite`, `check_dv_suite`, `trial_run`, `name_case`, `resolve_names`, `suite_tracking` | Write, check, and run the suite; keep the evidence ledger; read each DV's state and test results. |
 | Export | `export_dv_scripts`, `export_selection` | Choose what to deliver and build the delivered project from the suite. |
 | Status and UI | `autospec_status`, `addins`, `autospec_config`, `setup_autospec` | Reports and entry points. Read-only except for explicit actions. |
@@ -190,7 +223,7 @@ for the architecture.
 
 ## 9. Verification
 
-- Full suite: `Rscript -e "devtools::test()"`. The current baseline is 1134
+- Full suite: `Rscript -e "devtools::test()"`. The current baseline is 1235
   expectations passed, 0 failed, 3 skipped (the `dv_annualise` tests, which need
   `was.utils`).
 - Focused runs: `devtools::test(filter = "dv_tracking")` and so on.
@@ -213,6 +246,8 @@ failing DV. `finished_plan()` is the matching plan.
 | 2 | Run the tests and record each DV's result. | `unit_test_results(suite_dir)`: `uid`, `dv`, `Unit Test Passed` (`yes`, `no`, or blank when skipped or untested). | `test-suite_tracking.R`, last 3 tests | Done. |
 | 3 | Record stages 1 and 2 in the plan. | `record_tracking(plan, tracking)` (pure); `update_dv_tracking(config)` (reads, runs, writes the plan with a backup; exported). | `test-record_dv_tracking.R`, 7 tests; `test-dv_tracking.R` for the rule change | Done. |
 | 4 | Deliver finished DVs only, with a manifest. | `finished_dvs(plan)`, `tracking_gap(plan)`, `select_export_steps()`; `export_dv_scripts(..., plan = NULL, finished_only = FALSE)`; `left_out.csv`. | `test-export_finished_only.R`, 8 tests | Done. |
+| 4b | Keep spec defects apart from review notes, and list them for the spec owner. | `spec_issue_codes()`, `missing_else()`, `add_spec_issues()`, `spec_issue_table()`; plan column `spec_issues`; `QA_spec_issues.csv`; status count. | `test-spec_issues.R`, 16 tests; additions in `test-update_dv_plan.R`, `test-autospec_status.R` | Done. |
+| 4c | A configurable value for a missing ELSE, recorded where used. | `default_else` in the config; `parse_default_else()`, `format_else_value()`; `match_verb(..., default_else)`, `build_dv_plan(..., default_else)`; plan column `implied_else`; `# Implied ELSE:` in the suite. | `test-default_else.R`, 14 tests; additions in `test-autospec_config.R`, `test-update_dv_plan.R` | Done. |
 | 5 | Give verb DVs a test stub too, so they can be finished. | Change to `write_dv_suite()` / `sync_dv_suite()`. | To write after decision G. | Not started. |
 | 6 | Ship each delivered DV's unit test in the scripts project. | Change to `export_dv_scripts()`. | To write after decision H. | Not started. |
 

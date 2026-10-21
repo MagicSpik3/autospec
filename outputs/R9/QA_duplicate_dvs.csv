@@ -1,5 +1,5 @@
 dv,topic,sheet_name,excel_row,status,reviewed_by,instructions
-var_j,test_all_verbs_csv,Sheet1,7,reviewed,X,"IF category IN (1, 2) THEN var_j = 1 ELSE var_j = 0"
+var_j,test_all_verbs_csv,Sheet1,7,needs_review,,"IF category IN (1, 2) THEN var_j = 1 ELSE var_j = 0"
 var_j,test_csv,Sheet1,21,needs_review,,"IF var_f(1)>0 OR var_f(2) > 0 THEN 
     var_j = 1 
 ELSE

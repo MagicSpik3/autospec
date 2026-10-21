@@ -186,3 +186,21 @@ test_that("show_topics lists each spec workbook's topic", {
   expect_identical(topics$spec_file, "Income_DV_Spec_R10.xlsx")
   expect_true(topics$chosen)
 })
+
+
+test_that("default_else is 0 when missing, may be -9 or NA, and must be recognised", {
+  config_path <- make_project()
+  lines <- readLines(config_path)
+  read <- function(lines) {
+    writeLines(lines, config_path)
+    suppressMessages(read_autospec_config(config_path))$default_else
+  }
+
+  expect_true(any(grepl("^default_else: 0$", lines)))
+  expect_identical(read(lines), 0)
+  expect_identical(read(lines[!grepl("^default_else:", lines)]), 0)
+  expect_identical(read(sub("^default_else: .*$", "default_else: -9", lines)), -9)
+  expect_identical(read(sub("^default_else: .*$", "default_else: NA", lines)), NA_real_)
+  expect_identical(read(sub("^default_else: .*$", "default_else: 'NA'", lines)), NA_real_)
+  expect_error(read(sub("^default_else: .*$", "default_else: 5", lines)), "default_else")
+})

@@ -395,7 +395,7 @@ step_comment_lines <- function(step) {
   }
 
   comments <- comments[!grepl("^# .* -{4,}$", comments)]
-  comments <- comments[!grepl("^# (Not written yet|Plan notes|Already in the data|mark it not_a_derivation)", comments)]
+  comments <- comments[!grepl("^# (Not written yet|Plan notes|Spec issues|Already in the data|mark it not_a_derivation)", comments)]
 
   # The workbook is named without its folder, so our paths stay out of their code
   comments <- sub("^# (.*[.]xlsx)(,.*)?$", "# Spec: \\1\\2", comments)

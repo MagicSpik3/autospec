@@ -61,7 +61,17 @@ data; `test_dv_suite()` runs the example tests in the suite's `tests` folder.
 check_dv_suite(config$suite_folder, data_names = data_names)
 test_dv_suite(config$suite_folder)
 ```
-6. Build the DVs
+6. Record progress
+Records in `dv_plan.csv` which DVs are written and which have a unit test that
+is filled in and passes: the `DV Written`, `Unit Test Stub`, `Unit Test
+Populated` and `Unit Test Passed` columns. It reads the suite and runs its
+tests, so run it after checking. Values typed in those columns are replaced, and
+the old plan is backed up first. `autospec_status()` counts these, and a
+finished-only export (step 8) uses them.
+```{r tracking, eval=FALSE}
+update_dv_tracking(config)
+```
+7. Build the DVs
 Set the pension discount rate in the suite's `settings.R` first. Steps that
 fail, are not written yet or are missing an input are reported and skipped.
 ```{r build, eval=FALSE}
@@ -73,7 +83,7 @@ was_data <- run_dv_suite(
   report_file = config$report_file
 )
 ```
-7. Save the data with DVs
+7a. Save the data with DVs
 Saved to `output_data_file` in the config, if it is set.
 ```{r save, eval=FALSE}
 if (nzchar(config$output_data_file)) {
@@ -89,11 +99,17 @@ config (a checkout of the scripts repo); commit and push from there. The suite
 is checked and tested, and the plain R compared DV by DV with the suite on
 `was_data`, before anything is written. Export from the whole suite, not a
 topic selection.
+To deliver only the finished DVs while the rest are still being worked on, set
+`finished_only = TRUE`, after running step 6. A finished DV is written, with a
+unit test that is filled in and passes. Either way, `left_out.csv` in the
+scripts folder lists each DV left out and why.
 ```{r export, eval=FALSE}
 export_dv_scripts(
   config$suite_folder,
   config$scripts_folder,
   was_data,
-  title = paste("Spec ", config$round)
+  title = paste("Spec ", config$round),
+  plan = read_dv_plan(config$plan_file),
+  finished_only = FALSE
 )
 ```

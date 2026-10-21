@@ -114,7 +114,10 @@ test_that("a DV defined twice with different text is left for the reviewer", {
   plan <- suppressMessages(build_dv_plan(catalogue))
 
   expect_identical(plan$status, c("needs_review", "needs_review"))
-  expect_true(all(grepl("with different text: sign off the right one", plan$notes)))
+  expect_identical(
+    grepl("\\[duplicate_dv\\] also defined on .* with different text: sign off the right one", plan$spec_issues),
+    c(TRUE, TRUE)
+  )
 })
 
 
@@ -180,7 +183,7 @@ test_that("a near miss of a known DV name is reported", {
 
   plan <- build_dv_plan(catalogue)
 
-  expect_match(plan$notes[[2L]], "did you mean DVFLfFSVR9")
+  expect_match(plan$spec_issues[[2L]], "did you mean DVFLfFSVR9")
 })
 
 
@@ -189,7 +192,7 @@ test_that("every unknown input is reported when the data's names are supplied", 
 
   plan <- build_dv_plan(catalogue, data_names = "SomethingElse")
 
-  expect_match(plan$notes[[1L]], "unknown variable FCISAvR9_i")
+  expect_match(plan$spec_issues[[1L]], "unknown variable FCISAvR9_i")
 })
 
 

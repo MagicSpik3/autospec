@@ -4,7 +4,13 @@
 \alias{match_verb}
 \title{match_verb}
 \usage{
-match_verb(text, dv, level = NA_character_, known_names = character())
+match_verb(
+  text,
+  dv,
+  level = NA_character_,
+  known_names = character(),
+  default_else = 0
+)
 }
 \arguments{
 \item{text}{A single derivation.}
@@ -15,6 +21,9 @@ match_verb(text, dv, level = NA_character_, known_names = character())
 \code{"unknown"}.}
 
 \item{known_names}{Variable names known to exist.}
+
+\item{default_else}{The value the DV takes where the spec has an IF with no
+ELSE: 0, -9 or NA. Usually \code{default_else} from the config.}
 }
 \value{
 A list with elements \code{verb} (a verb name or \code{NA}), \code{args} (a named
